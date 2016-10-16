@@ -8,16 +8,15 @@ func Encode(str string) string {
 	return sEnc
 }
 
-func Decode(str string) string {
+func Decode(str string) (string, error) {
 	sDec, err := base64.StdEncoding.DecodeString(str)
 
 	if err != nil {
 		ferr := NormalizeErr(err)
-		ferr.Error()
-		return ""
+		return "", ferr
 	}
 
-	return string(sDec)
+	return string(sDec), nil
 }
 
 func PHPEncode(str string) string {
