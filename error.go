@@ -9,11 +9,8 @@ type FuzzerError struct {
 	conf *config
 }
 
-func (e FuzzerError) Error() string {
-	fmt.Printf("%v %v \n", e.code, e.msg)
-	fmt.Printf("bag: %v \n", e.bag)
-	fmt.Printf("conf: %v \n", e.conf)
-	return fmt.Sprintf("%v: %v - { bag: %v } { conf: %v }", e.code, e.msg, e.bag, e.conf)
+func (e FuzzerError) Error() string {	
+	return fmt.Sprintf("%v: %v \n     bag: %v \n     conf: %v", e.code, e.msg, e.bag, e.conf)
 }
 
 func SetupErr() FuzzerError {

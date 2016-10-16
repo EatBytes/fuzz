@@ -136,7 +136,13 @@ func (n *NETWORK) Send(req *http.Request) (*http.Response, error) {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		ferr = RequestErr(err, resp.StatusCode)
+		status := 500
+		
+		if resp != nil {
+			status = resp.StatusCode
+		}
+	
+		ferr = RequestErr(err, status)
 		return nil, ferr
 	}
 
