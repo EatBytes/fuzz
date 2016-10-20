@@ -1,27 +1,13 @@
-package fuzzcore
+package network
 
 import (
 	"bytes"
 	"net/http"
 	"net/url"
+
+	"github.com/eatbytes/fuzz/core"
+	"github.com/eatbytes/fuzz/ferror"
 )
-
-var NET = NETWORK{
-	host:      "",
-	method:    0,
-	parameter: "Fuzzer",
-	crypt:     false,
-	status:    false,
-}
-
-type config struct {
-	url    string
-	method string
-	form   *bytes.Buffer
-	jar    []string
-	proxy  string
-	file   bool
-}
 
 type NETWORK struct {
 	host      string
@@ -37,26 +23,29 @@ type NETWORK struct {
 }
 
 func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*http.Request, error) {
-	var ferr FuzzerError
+	var ferr ferror.FuzzerError
+	var c core.Config
+	var req *http.Request
+	var err error
 
 	if n.status != true {
-		ferr = SetupErr()
+		ferr = ferror.SetupErr()
 		return nil, ferr
 	}
 
 	n.status = true
 
-	c := config{
-		url:    n.host,
-		method: "POST",
-		form:   bytes,
+	c = core.Config{
+		Url:    n.host,
+		Method: "POST",
+		Form:   bytes,
 	}
 
-	req, err := http.NewRequest(c.method, c.url, bytes)
+	req, err = http.NewRequest(c.Method, c.Url, bytes)
 	req.Header.Set("Content-Type", bondary)
 
 	if err != nil {
-		ferr := BuildRequestErr(err, &c)
+		ferr := ferror.BuildRequestErr(err, &c)
 		return nil, ferr
 	}
 
@@ -64,24 +53,24 @@ func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*http.Requ
 }
 
 func (n *NETWORK) Prepare(r string) (*http.Request, error) {
-	var ferr FuzzerError
-	ferr = NoMethodFoundErr()
-
-	if n.status != true {
-		ferr = SetupErr()
-		return nil, ferr
-	}
-
-	var config *config
+	var ferr ferror.FuzzerError
+	var config *core.Config
 	var req *http.Request
 	var err error
 
+	ferr = ferror.NoMethodFoundErr()
+
+	if n.status != true {
+		ferr = ferror.SetupErr()
+		return nil, ferr
+	}
+
 	if n.method == 0 {
 		config = n.getConfig(r)
-		req, err = http.NewRequest(config.method, config.url, nil)
+		req, err = http.NewRequest(config.Method, config.Url, nil)
 
 		if err != nil {
-			ferr := BuildRequestErr(err, config)
+			ferr = ferror.BuildRequestErr(err, config)
 			return nil, ferr
 		}
 
@@ -90,10 +79,10 @@ func (n *NETWORK) Prepare(r string) (*http.Request, error) {
 
 	if n.method == 1 {
 		config = n.postConfig(r)
-		req, err = http.NewRequest(config.method, config.url, config.form)
+		req, err = http.NewRequest(config.Method, config.Url, config.Form)
 
 		if err != nil {
-			ferr := BuildRequestErr(err, config)
+			ferr = ferror.BuildRequestErr(err, config)
 			return nil, ferr
 		}
 
@@ -104,10 +93,10 @@ func (n *NETWORK) Prepare(r string) (*http.Request, error) {
 
 	if n.method == 2 {
 		config = n.headerConfig(r)
-		req, err = http.NewRequest(config.method, config.url, nil)
+		req, err = http.NewRequest(config.Method, config.Url, nil)
 
 		if err != nil {
-			ferr := BuildRequestErr(err, config)
+			ferr = ferror.BuildRequestErr(err, config)
 			return nil, ferr
 		}
 
@@ -123,26 +112,30 @@ func (n *NETWORK) Prepare(r string) (*http.Request, error) {
 }
 
 func (n *NETWORK) Send(req *http.Request) (*http.Response, error) {
-	var ferr FuzzerError
+	var ferr ferror.FuzzerError
+	var client *http.Client
+	var resp *http.Response
+	var err error
+	var status int
 
 	if n.status != true {
-		ferr = SetupErr()
+		ferr = ferror.SetupErr()
 		return nil, ferr
 	}
 
 	n._respBody = nil
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	client = &http.Client{}
+	resp, err = client.Do(req)
 
 	if err != nil {
-		status := 500
-		
+		status = 500
+
 		if resp != nil {
 			status = resp.StatusCode
 		}
-	
-		ferr = RequestErr(err, status)
+
+		ferr = ferror.RequestErr(err, status)
 		return nil, ferr
 	}
 

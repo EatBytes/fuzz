@@ -1,15 +1,19 @@
-package fuzzcore
+package ferror
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/eatbytes/fuzz/core"
+)
 
 type FuzzerError struct {
 	code int
 	msg  string
 	bag  error
-	conf *config
+	conf *core.Config
 }
 
-func (e FuzzerError) Error() string {	
+func (e FuzzerError) Error() string {
 	return fmt.Sprintf("%v: %v \n     bag: %v \n     conf: %v", e.code, e.msg, e.bag, e.conf)
 }
 
@@ -27,7 +31,7 @@ func RequestErr(err error, c int) FuzzerError {
 	}
 }
 
-func BuildRequestErr(err error, c *config) FuzzerError {
+func BuildRequestErr(err error, c *core.Config) FuzzerError {
 	return FuzzerError{
 		msg:  "Error: Impossible to create request with config",
 		bag:  err,
@@ -59,5 +63,11 @@ func NormalizeErr(err error) FuzzerError {
 	return FuzzerError{
 		msg: "Error: Impossible to normalize the string",
 		bag: err,
+	}
+}
+
+func TestErr() FuzzerError {
+	return FuzzerError{
+		msg: "Error: Server doesn't respond well to test",
 	}
 }

@@ -1,4 +1,4 @@
-package fuzzcore
+package php
 
 import (
 	"bytes"
@@ -6,14 +6,18 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+
+	"github.com/eatbytes/fuzz/ferror"
+	"github.com/eatbytes/fuzz/normalizer"
 )
 
-var PHP = PHPInterface{}
+type PHP struct {
+	_parameter string
+}
 
-type PHPInterface struct{}
-
-func (p *PHPInterface) buildHeader(dir string) string {
+func buildHeader(dir string) string {
 	var headers [8]string
+	var str string
 
 	headers[0] = "header('Content-Description: File Transfer');"
 	headers[1] = "header('Content-Type: application/octet-stream');"
@@ -24,8 +28,6 @@ func (p *PHPInterface) buildHeader(dir string) string {
 	headers[6] = "header('Pragma: public');"
 	headers[7] = "header('Content-Length: ' . filesize('" + dir + "'));"
 
-	var str string
-
 	for _, header := range headers {
 		str = str + header
 	}
@@ -33,31 +35,26 @@ func (p *PHPInterface) buildHeader(dir string) string {
 	return str
 }
 
-func (p *PHPInterface) Raw(r string) string {
-	raw := r + FORMATER.Response()
-	return raw
+func (php *PHP) Download(dir string) string {
+	var c1, c2, headers, ob string
+
+	c1 = "if (file_exists('" + dir + "')) {"
+	c2 = "}"
+	headers = buildHeader(dir)
+	ob = "ob_clean();flush();readfile('" + dir + "');exit();"
+
+	return c1 + headers + ob + c2
 }
 
-func (p *PHPInterface) Download(dir string) string {
-	c1 := "if (file_exists('" + dir + "')) {"
-	c2 := "}"
-	headers := p.buildHeader(dir)
-	ob := "ob_clean();flush();readfile('" + dir + "');exit();"
+func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
+	var ferr ferror.FuzzerError
 
-	php := c1 + headers + ob + c2
-
-	return php
-}
-
-func (p *PHPInterface) Upload(path, dir string) (*bytes.Buffer, string, error) {
-	var ferr FuzzerError
-
-	php := "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
-	php = Encode(php)
+	phpR := "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
+	phpR = normalizer.Encode(phpR)
 
 	file, err := os.Open(path)
 	if err != nil {
-		ferr = FileErr(err)
+		ferr = ferror.FileErr(err)
 		return nil, "", ferr
 	}
 
@@ -68,17 +65,17 @@ func (p *PHPInterface) Upload(path, dir string) (*bytes.Buffer, string, error) {
 	part, err := writer.CreateFormFile("file", filepath.Base(path))
 
 	if err != nil {
-		ferr = PartErr(err)
+		ferr = ferror.PartErr(err)
 		return nil, "", ferr
 	}
 
 	_, err = io.Copy(part, file)
 
-	writer.WriteField(NET.GetParameter(), php)
+	writer.WriteField(php._parameter, phpR)
 
 	err = writer.Close()
 	if err != nil {
-		ferr = FileErr(err)
+		ferr = ferror.FileErr(err)
 		return nil, "", err
 	}
 

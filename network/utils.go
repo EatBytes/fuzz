@@ -1,21 +1,15 @@
-package fuzzcore
+package network
 
 import (
 	"io/ioutil"
 	"net/http"
+
+	"github.com/eatbytes/fuzz/ferror"
+	"github.com/eatbytes/fuzz/normalizer"
 )
 
 func (n *NETWORK) IsSetup() bool {
 	return n.status
-}
-
-func (n *NETWORK) SetConfig(url string, method int, parameter string, crypt bool) {
-	n.host = url
-	n.method = method
-	n.parameter = parameter
-	n.crypt = crypt
-
-	n.status = true
 }
 
 func (n *NETWORK) GetUrl() string {
@@ -103,4 +97,84 @@ func (n *NETWORK) GetResultStrByMethod(m int, r *http.Response) string {
 
 func (n *NETWORK) GetResultStr(r *http.Response) string {
 	return n.GetResultStrByMethod(n.method, r)
+}
+
+func (n *NETWORK) Setup(url, parameter string, method int) {
+	n.host = url
+	n.parameter = parameter
+	n.method = method
+	n.status = true
+}
+
+func (n *NETWORK) Test() (bool, error) {
+	var r string
+	var err error
+	var ferr ferror.FuzzerError
+
+	r = "$r=1;" + n.Response()
+	r, err = n.QuickProcess(r)
+
+	if err != nil {
+		return false, err
+	}
+
+	if r != "1" {
+		ferr = ferror.TestErr()
+		return false, ferr
+	}
+
+	return true, nil
+}
+
+func (n *NETWORK) QuickSend(str string) (string, error) {
+	var resp *http.Response
+	var err error
+
+	resp, err = n.PrepareSend(str)
+
+	if err != nil {
+		return "", err
+	}
+
+	return n.GetResultStr(resp), nil
+}
+
+func (n *NETWORK) QuickProcess(str string) (string, error) {
+	var resp string
+	var result string
+	var err error
+
+	resp, err = n.QuickSend(str)
+
+	if err != nil {
+		return "", err
+	}
+
+	result, err = normalizer.Decode(resp)
+
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
+}
+
+func (n *NETWORK) PrepareSend(str string) (*http.Response, error) {
+	var req *http.Request
+	var resp *http.Response
+	var err error
+
+	req, err = n.Prepare(str)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err = n.Send(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
