@@ -108,18 +108,21 @@ func (n *NETWORK) Setup(url, parameter string, method int) {
 
 func (n *NETWORK) Test() (bool, error) {
 	var r string
+	var resp *http.Response
 	var err error
 	var ferr ferror.FuzzerError
 
 	r = "$r=1;" + n.Response()
-	r, err = n.QuickProcess(r)
+	resp, err = n.PrepareSend(r)
 
 	if err != nil {
 		return false, err
 	}
 
-	if r != "1" {
-		ferr = ferror.TestErr()
+	r = n.GetResultStr(resp)
+
+	if r != normalizer.Encode("1") {
+		ferr = ferror.TestErr(resp, r)
 		return false, ferr
 	}
 

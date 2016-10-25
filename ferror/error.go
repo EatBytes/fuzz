@@ -2,19 +2,22 @@ package ferror
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/eatbytes/fuzz/core"
 )
 
 type FuzzerError struct {
-	code int
-	msg  string
-	bag  error
-	conf *core.Config
+	code     int
+	msg      string
+	bag      error
+	conf     *core.Config
+	resp     *http.Response
+	respBody string
 }
 
 func (e FuzzerError) Error() string {
-	return fmt.Sprintf("%v: %v \n     bag: %v \n     conf: %v", e.code, e.msg, e.bag, e.conf)
+	return fmt.Sprintf("%v: %v \n\nbag: %v \nconf: %v \nresponse: %v \n    body-> %v\n\n", e.code, e.msg, e.bag, e.conf, e.resp, e.respBody)
 }
 
 func SetupErr() FuzzerError {
@@ -66,8 +69,10 @@ func NormalizeErr(err error) FuzzerError {
 	}
 }
 
-func TestErr() FuzzerError {
+func TestErr(r *http.Response, b string) FuzzerError {
 	return FuzzerError{
-		msg: "Error: Server doesn't respond well to test",
+		msg:      "Error: Server doesn't respond well to test",
+		resp:     r,
+		respBody: b,
 	}
 }
