@@ -17,7 +17,13 @@ type FuzzerError struct {
 }
 
 func (e FuzzerError) Error() string {
-	return fmt.Sprintf("%v: %v \n\nbag: %v \nconf: %v \nresponse: %v \n    body-> %v\n\n", e.code, e.msg, e.bag, e.conf, e.resp, e.respBody)
+	str := "%v: %v \n\n" +
+		"     bag: %v \n" +
+		"     conf: %v \n" +
+		"     response: %v \n" +
+		"          body-> %v\n"
+
+	return fmt.Sprintf(str, e.code, e.msg, e.bag, e.conf, e.resp, e.respBody)
 }
 
 func SetupErr() FuzzerError {
