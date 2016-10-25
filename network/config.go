@@ -4,65 +4,81 @@ import (
 	"bytes"
 	"net/url"
 
-	"github.com/eatbytes/fuzz/core"
 	"github.com/eatbytes/fuzz/normalizer"
 )
 
-func (n *NETWORK) postConfig(r string) *core.Config {
+type netconfig struct {
+	Url    string
+	Method string
+	Form   *bytes.Buffer
+	Jar    []string
+	Proxy  string
+	File   bool
+}
+
+func (n *NETWORK) GetConfig(r string) *netconfig {
+	switch n.config.Method {
+	case "POST":
+		return n.GetPOSTConfig(r)
+	case "HEADER":
+		return n.GetHEADERConfig(r)
+	case "COOKIE":
+		break
+	}
+
+	return n.GetGETConfig(r)
+}
+
+func (n *NETWORK) normalizeRequest(r string) string {
 	var request string
+
+	request = normalizer.Encode(r)
+	n.cmd = request
+
+	return request
+}
+
+func (n *NETWORK) GetPOSTConfig(r string) *netconfig {
 	var form url.Values
 	var data *bytes.Buffer
 
 	n.status = true
 
-	request = normalizer.Encode(r)
-	n.cmd = request
-
 	form = url.Values{}
-	form.Set(n.parameter, request)
+	form.Set(n.config.Parameter, n.normalizeRequest(r))
 	n._body = form
 
 	data = bytes.NewBufferString(form.Encode())
 
-	return &core.Config{
-		Url:    n.host,
+	return &netconfig{
+		Url:    n.config.Url,
 		Method: "POST",
 		Form:   data,
 	}
 }
 
-func (n *NETWORK) getConfig(r string) *core.Config {
-	var request string
+func (n *NETWORK) GetGETConfig(r string) *netconfig {
 	var url string
 
 	n.status = true
+	url = n.config.Url + "?" + n.config.Parameter + "=" + n.normalizeRequest(r)
 
-	request = normalizer.Encode(r)
-	n.cmd = request
-
-	url = n.host + "?" + n.parameter + "=" + request
-
-	return &core.Config{
+	return &netconfig{
 		Url:    url,
 		Method: "GET",
 		Form:   nil,
 	}
 }
 
-func (n *NETWORK) headerConfig(r string) *core.Config {
-	var request string
-
+func (n *NETWORK) GetHEADERConfig(r string) *netconfig {
 	n.status = true
 
-	request = normalizer.Encode(r)
-	n.cmd = request
-
-	return &core.Config{
-		Url:    n.host,
+	return &netconfig{
+		Url:    n.config.Url,
 		Method: "GET",
 		Form:   nil,
 	}
 }
 
-func (n *NETWORK) cookieConfig(r string) {
+func (n *NETWORK) GetCOOKIEConfig(r string) {
 }

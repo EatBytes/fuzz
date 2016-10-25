@@ -10,12 +10,9 @@ import (
 )
 
 type NETWORK struct {
-	host      string
-	method    int
-	parameter string
-	crypt     bool
-	status    bool
-	cmd       string
+	config *core.Config
+	status bool
+	cmd    string
 
 	_body         url.Values
 	_respBody     []byte
@@ -24,7 +21,7 @@ type NETWORK struct {
 
 func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*http.Request, error) {
 	var ferr ferror.FuzzerError
-	var c core.Config
+	var config netconfig
 	var req *http.Request
 	var err error
 
@@ -35,17 +32,17 @@ func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*http.Requ
 
 	n.status = true
 
-	c = core.Config{
-		Url:    n.host,
+	config = netconfig{
+		Url:    n.config.Url,
 		Method: "POST",
 		Form:   bytes,
 	}
 
-	req, err = http.NewRequest(c.Method, c.Url, bytes)
+	req, err = http.NewRequest(config.Method, config.Url, config.Form)
 	req.Header.Set("Content-Type", bondary)
 
 	if err != nil {
-		ferr := ferror.BuildRequestErr(err, &c)
+		ferr := ferror.BuildRequestErr(err)
 		return nil, ferr
 	}
 
@@ -54,58 +51,34 @@ func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*http.Requ
 
 func (n *NETWORK) Prepare(r string) (*http.Request, error) {
 	var ferr ferror.FuzzerError
-	var config *core.Config
+	var netconfig *netconfig
 	var req *http.Request
 	var err error
-
-	ferr = ferror.NoMethodFoundErr()
 
 	if n.status != true {
 		ferr = ferror.SetupErr()
 		return nil, ferr
 	}
 
-	if n.method == 0 {
-		config = n.getConfig(r)
-		req, err = http.NewRequest(config.Method, config.Url, nil)
+	netconfig = n.GetConfig(r)
 
-		if err != nil {
-			ferr = ferror.BuildRequestErr(err, config)
-			return nil, ferr
-		}
-
-		return req, nil
+	if netconfig.Form != nil {
+		req, err = http.NewRequest(netconfig.Method, netconfig.Url, netconfig.Form)
+	} else {
+		req, err = http.NewRequest(netconfig.Method, netconfig.Url, nil)
 	}
 
-	if n.method == 1 {
-		config = n.postConfig(r)
-		req, err = http.NewRequest(config.Method, config.Url, config.Form)
+	if err != nil {
+		ferr = ferror.BuildRequestErr(err)
+		return nil, ferr
+	}
 
-		if err != nil {
-			ferr = ferror.BuildRequestErr(err, config)
-			return nil, ferr
-		}
-
+	if n.config.Method == "POST" {
 		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-		return req, nil
 	}
 
-	if n.method == 2 {
-		config = n.headerConfig(r)
-		req, err = http.NewRequest(config.Method, config.Url, nil)
-
-		if err != nil {
-			ferr = ferror.BuildRequestErr(err, config)
-			return nil, ferr
-		}
-
-		req.Header.Add(n.parameter, n.cmd)
-
-		return req, nil
-	}
-
-	if n.method == 3 {
+	if n.config.Method == "HEADER" {
+		req.Header.Add(n.config.Parameter, n.cmd)
 	}
 
 	return req, ferr

@@ -1,9 +1,11 @@
 package network
 
 import (
+	"bytes"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/eatbytes/fuzz/core"
 	"github.com/eatbytes/fuzz/ferror"
 	"github.com/eatbytes/fuzz/normalizer"
 )
@@ -13,35 +15,15 @@ func (n *NETWORK) IsSetup() bool {
 }
 
 func (n *NETWORK) GetUrl() string {
-	return n.host
+	return n.config.Url
 }
 
 func (n *NETWORK) GetMethod() int {
-	return n.method
-}
-
-func (n *NETWORK) GetMethodStr() string {
-	if n.method == 0 {
-		return "GET"
-	}
-
-	if n.method == 1 {
-		return "POST"
-	}
-
-	if n.method == 3 {
-		return "HEADER"
-	}
-
-	if n.method == 4 {
-		return "COOKIE"
-	}
-
-	return "ERROR"
+	return n.config.Method
 }
 
 func (n *NETWORK) GetParameter() string {
-	return n.parameter
+	return n.config.Parameter
 }
 
 func (n *NETWORK) GetBody(r *http.Response) []byte {
@@ -62,7 +44,9 @@ func (n *NETWORK) GetBody(r *http.Response) []byte {
 }
 
 func (n *NETWORK) GetBodyStr(r *http.Response) string {
-	buffer := n.GetBody(r)
+	var buffer bytes.Buffer
+
+	buffer = n.GetBody(r)
 	return string(buffer)
 }
 
@@ -76,34 +60,33 @@ func (n *NETWORK) GetRequest() *http.Request {
 }
 
 func (n *NETWORK) GetHeaderStr(r *http.Response) string {
-	str := r.Header.Get(n.parameter)
+	var str string
+
+	str = r.Header.Get(n.config.Parameter)
 	return str
 }
 
 func (n *NETWORK) GetResultStrByMethod(m int, r *http.Response) string {
-	if m == 0 || m == 1 {
+	if m == "GET" || m == "POST" {
 		return n.GetBodyStr(r)
 	}
 
-	if m == 2 {
+	if m == "HEADER" {
 		return n.GetHeaderStr(r)
 	}
 
-	if m == 3 {
+	if m == "COOKIE" {
 	}
 
 	return ""
 }
 
 func (n *NETWORK) GetResultStr(r *http.Response) string {
-	return n.GetResultStrByMethod(n.method, r)
+	return n.GetResultStrByMethod(n.config.Method, r)
 }
 
-func (n *NETWORK) Setup(url, parameter string, method int) {
-	n.host = url
-	n.parameter = parameter
-	n.method = method
-	n.status = true
+func (n *NETWORK) Setup(cf *core.Config) {
+	n.config = cf
 }
 
 func (n *NETWORK) Test() (bool, error) {

@@ -3,15 +3,12 @@ package ferror
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/eatbytes/fuzz/core"
 )
 
 type FuzzerError struct {
 	code     int
 	msg      string
 	bag      error
-	conf     *core.Config
 	resp     *http.Response
 	respBody string
 }
@@ -19,11 +16,10 @@ type FuzzerError struct {
 func (e FuzzerError) Error() string {
 	str := "%v: %v \n\n" +
 		"     bag: %v \n" +
-		"     conf: %v \n" +
 		"     response: %v \n" +
 		"          body-> %v\n"
 
-	return fmt.Sprintf(str, e.code, e.msg, e.bag, e.conf, e.resp, e.respBody)
+	return fmt.Sprintf(str, e.code, e.msg, e.bag, e.resp, e.respBody)
 }
 
 func SetupErr() FuzzerError {
@@ -40,17 +36,10 @@ func RequestErr(err error, c int) FuzzerError {
 	}
 }
 
-func BuildRequestErr(err error, c *core.Config) FuzzerError {
+func BuildRequestErr(err error) FuzzerError {
 	return FuzzerError{
-		msg:  "Error: Impossible to create request with config",
-		bag:  err,
-		conf: c,
-	}
-}
-
-func NoMethodFoundErr() FuzzerError {
-	return FuzzerError{
-		msg: "Error: No method was find for the req to prepare",
+		msg: "Error: Impossible to create request",
+		bag: err,
 	}
 }
 
