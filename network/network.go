@@ -3,43 +3,38 @@ package network
 import (
 	"bytes"
 	"net/http"
-	"net/url"
 
 	"github.com/eatbytes/fuzz/core"
 	"github.com/eatbytes/fuzz/ferror"
 )
 
+const (
+	GET    = "GET"
+	POST   = "POST"
+	HEADER = "HEADER"
+	COOKIE = "COOKIE"
+)
+
 type NETWORK struct {
 	config *core.Config
 	status bool
-	cmd    string
 
-	_body         url.Values
-	_respBody     []byte
-	_lastResponse *http.Response
+	response *Response
+	request  *Request
 }
 
-func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*http.Request, error) {
+func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*Request, error) {
 	var ferr ferror.FuzzerError
-	var config netconfig
-	var req *http.Request
+	var req *Request
 	var err error
 
-	if n.status != true {
+	if !n.IsSetup() {
 		ferr = ferror.SetupErr()
 		return nil, ferr
 	}
 
-	n.status = true
-
-	config = netconfig{
-		Url:    n.config.Url,
-		Method: "POST",
-		Form:   bytes,
-	}
-
-	req, err = http.NewRequest(config.Method, config.Url, config.Form)
-	req.Header.Set("Content-Type", bondary)
+	req.Http, err = http.NewRequest(POST, n.config.Url, bytes)
+	req.Http.Header.Set("Content-Type", bondary)
 
 	if err != nil {
 		ferr := ferror.BuildRequestErr(err)
@@ -49,57 +44,41 @@ func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*http.Requ
 	return req, nil
 }
 
-func (n *NETWORK) Prepare(r string) (*http.Request, error) {
-	var ferr ferror.FuzzerError
-	var netconfig *netconfig
-	var req *http.Request
+func (n *NETWORK) Prepare(r string) (*Request, error) {
+	var req *Request
 	var err error
 
-	if n.status != true {
-		ferr = ferror.SetupErr()
-		return nil, ferr
+	if !n.IsSetup() {
+		return nil, ferror.SetupErr()
 	}
 
-	netconfig = n.GetConfig(r)
-
-	if netconfig.Form != nil {
-		req, err = http.NewRequest(netconfig.Method, netconfig.Url, netconfig.Form)
-	} else {
-		req, err = http.NewRequest(netconfig.Method, netconfig.Url, nil)
-	}
+	req, err = n.buildRequest(r)
 
 	if err != nil {
-		ferr = ferror.BuildRequestErr(err)
-		return nil, ferr
+		return nil, ferror.BuildRequestErr(err)
 	}
 
-	if n.config.Method == "POST" {
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	if !req.status {
+		return nil, ferror.SetupErr()
 	}
 
-	if n.config.Method == "HEADER" {
-		req.Header.Add(n.config.Parameter, n.cmd)
-	}
-
-	return req, ferr
+	return req, nil
 }
 
-func (n *NETWORK) Send(req *http.Request) (*http.Response, error) {
-	var ferr ferror.FuzzerError
+func (n *NETWORK) Send(req *Request) (*Response, error) {
 	var client *http.Client
 	var resp *http.Response
 	var err error
 	var status int
 
-	if n.status != true {
-		ferr = ferror.SetupErr()
-		return nil, ferr
+	if !n.IsSetup() {
+		return nil, ferror.SetupErr()
 	}
 
-	n._respBody = nil
+	n.request = req
 
 	client = &http.Client{}
-	resp, err = client.Do(req)
+	resp, err = client.Do(req.Http)
 
 	if err != nil {
 		status = 500
@@ -108,11 +87,37 @@ func (n *NETWORK) Send(req *http.Request) (*http.Response, error) {
 			status = resp.StatusCode
 		}
 
-		ferr = ferror.RequestErr(err, status)
-		return nil, ferr
+		return nil, ferror.RequestErr(err, status)
 	}
 
-	n._lastResponse = resp
+	response := &Response{
+		resp,
+		nil,
+		n.config.Parameter,
+		n.config.Method,
+	}
 
-	return resp, nil
+	n.response = response
+
+	return response, nil
+}
+
+func (n *NETWORK) GetUrl() string {
+	return n.config.Url
+}
+
+func (n *NETWORK) GetMethod() string {
+	return n.config.Method
+}
+
+func (n *NETWORK) GetParameter() string {
+	return n.config.Parameter
+}
+
+func (n *NETWORK) GetResponse() *Response {
+	return n.response
+}
+
+func (n *NETWORK) GetRequest() *Request {
+	return n.request
 }

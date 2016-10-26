@@ -1,9 +1,7 @@
 package network
 
 import (
-	"bytes"
-	"io/ioutil"
-	"net/http"
+	"strings"
 
 	"github.com/eatbytes/fuzz/core"
 	"github.com/eatbytes/fuzz/ferror"
@@ -14,86 +12,46 @@ func (n *NETWORK) IsSetup() bool {
 	return n.status
 }
 
-func (n *NETWORK) GetUrl() string {
-	return n.config.Url
-}
+func (n *NETWORK) Setup(cf *core.Config) error {
+	var ferr ferror.FuzzerError
 
-func (n *NETWORK) GetMethod() int {
-	return n.config.Method
-}
+	cf.Url = strings.TrimSpace(cf.Url)
+	cf.Method = strings.TrimSpace(strings.ToUpper(cf.Method))
+	cf.Parameter = strings.TrimSpace(cf.Parameter)
 
-func (n *NETWORK) GetParameter() string {
-	return n.config.Parameter
-}
-
-func (n *NETWORK) GetBody(r *http.Response) []byte {
-	if n._respBody != nil {
-		return n._respBody
+	if cf.Url == "" {
+		ferr = ferror.Default("The url should be specified")
+		return ferr
 	}
 
-	defer r.Body.Close()
-	buffer, err := ioutil.ReadAll(r.Body)
-
-	if err != nil {
-		panic(err)
+	if !strings.Contains(cf.Url, "http://") || !strings.Contains(cf.Url, "https://") {
+		cf.Url = "http://" + cf.Url
 	}
 
-	n._respBody = buffer
-
-	return buffer
-}
-
-func (n *NETWORK) GetBodyStr(r *http.Response) string {
-	var buffer bytes.Buffer
-
-	buffer = n.GetBody(r)
-	return string(buffer)
-}
-
-func (n *NETWORK) GetResponse() *http.Response {
-	return n._lastResponse
-}
-
-func (n *NETWORK) GetRequest() *http.Request {
-	n._lastResponse.Request.PostForm = n._body
-	return n._lastResponse.Request
-}
-
-func (n *NETWORK) GetHeaderStr(r *http.Response) string {
-	var str string
-
-	str = r.Header.Get(n.config.Parameter)
-	return str
-}
-
-func (n *NETWORK) GetResultStrByMethod(m int, r *http.Response) string {
-	if m == "GET" || m == "POST" {
-		return n.GetBodyStr(r)
+	if cf.Method != GET && cf.Method != POST && cf.Method != HEADER && cf.Method != COOKIE && cf.Method != "" {
+		ferr = ferror.Default("The method (" + cf.Method + ") is not a valid one. Please choose between: GET, POST, HEADER or COOKIE.")
+		return ferr
 	}
 
-	if m == "HEADER" {
-		return n.GetHeaderStr(r)
+	if cf.Method == "" {
+		cf.Method = GET
 	}
 
-	if m == "COOKIE" {
+	if cf.Parameter == "" {
+		cf.Parameter = "fuzzer"
 	}
 
-	return ""
-}
-
-func (n *NETWORK) GetResultStr(r *http.Response) string {
-	return n.GetResultStrByMethod(n.config.Method, r)
-}
-
-func (n *NETWORK) Setup(cf *core.Config) {
+	cf.Crypt = false
 	n.config = cf
+	n.status = true
+
+	return nil
 }
 
 func (n *NETWORK) Test() (bool, error) {
 	var r string
-	var resp *http.Response
+	var resp *Response
 	var err error
-	var ferr ferror.FuzzerError
 
 	r = "$r=1;" + n.Response()
 	resp, err = n.PrepareSend(r)
@@ -102,18 +60,17 @@ func (n *NETWORK) Test() (bool, error) {
 		return false, err
 	}
 
-	r = n.GetResultStr(resp)
+	r = resp.GetResultStr()
 
 	if r != normalizer.Encode("1") {
-		ferr = ferror.TestErr(resp, r)
-		return false, ferr
+		return false, ferror.TestErr(resp.Http, r)
 	}
 
 	return true, nil
 }
 
 func (n *NETWORK) QuickSend(str string) (string, error) {
-	var resp *http.Response
+	var resp *Response
 	var err error
 
 	resp, err = n.PrepareSend(str)
@@ -122,7 +79,7 @@ func (n *NETWORK) QuickSend(str string) (string, error) {
 		return "", err
 	}
 
-	return n.GetResultStr(resp), nil
+	return resp.GetResultStr(), nil
 }
 
 func (n *NETWORK) QuickProcess(str string) (string, error) {
@@ -145,9 +102,9 @@ func (n *NETWORK) QuickProcess(str string) (string, error) {
 	return result, nil
 }
 
-func (n *NETWORK) PrepareSend(str string) (*http.Response, error) {
-	var req *http.Request
-	var resp *http.Response
+func (n *NETWORK) PrepareSend(str string) (*Response, error) {
+	var req *Request
+	var resp *Response
 	var err error
 
 	req, err = n.Prepare(str)
@@ -163,4 +120,15 @@ func (n *NETWORK) PrepareSend(str string) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+func (n *NETWORK) Response() string {
+	switch n.config.Method {
+	case HEADER:
+		return "header('" + n.config.Parameter + ":' . " + normalizer.PHPEncode("$r") + ");exit();"
+	case COOKIE:
+		return "setcookie('" + n.config.Parameter + "', " + normalizer.PHPEncode("$r") + ");exit();"
+	}
+
+	return "echo(" + normalizer.PHPEncode("$r") + ");exit();"
 }

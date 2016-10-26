@@ -47,15 +47,14 @@ func (php *PHP) Download(dir string) string {
 }
 
 func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
-	var ferr ferror.FuzzerError
+	var phpR string
 
-	phpR := "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
+	phpR = "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
 	phpR = normalizer.Encode(phpR)
 
 	file, err := os.Open(path)
 	if err != nil {
-		ferr = ferror.FileErr(err)
-		return nil, "", ferr
+		return nil, "", ferror.FileErr(err)
 	}
 
 	defer file.Close()
@@ -65,8 +64,7 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 	part, err := writer.CreateFormFile("file", filepath.Base(path))
 
 	if err != nil {
-		ferr = ferror.PartErr(err)
-		return nil, "", ferr
+		return nil, "", ferror.PartErr(err)
 	}
 
 	_, err = io.Copy(part, file)
@@ -75,8 +73,7 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 
 	err = writer.Close()
 	if err != nil {
-		ferr = ferror.FileErr(err)
-		return nil, "", err
+		return nil, "", ferror.FileErr(err)
 	}
 
 	return body, writer.FormDataContentType(), nil

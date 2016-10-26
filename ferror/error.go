@@ -14,17 +14,23 @@ type FuzzerError struct {
 }
 
 func (e FuzzerError) Error() string {
-	str := "%v: %v \n\n" +
+	str := "%v \n\n" +
 		"     bag: %v \n" +
 		"     response: %v \n" +
 		"          body-> %v\n"
 
-	return fmt.Sprintf(str, e.code, e.msg, e.bag, e.resp, e.respBody)
+	return fmt.Sprintf(str, e.msg, e.bag, e.resp, e.respBody)
 }
 
 func SetupErr() FuzzerError {
 	return FuzzerError{
-		msg: "Error: You havn't setup the required information, please refer to srv config.",
+		msg: "Error: You havn't setup the required information.",
+	}
+}
+
+func Default(s string) FuzzerError {
+	return FuzzerError{
+		msg: "Error: " + s,
 	}
 }
 

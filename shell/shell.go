@@ -57,12 +57,9 @@ func (shl *SHELL) Ls(c string) string {
 	return ls
 }
 
-func (shl *SHELL) Cd(a string) string {
-	var cd string
-
-	cd = a + " && pwd"
+func (shl *SHELL) Cd(cd string) string {
+	cd = cd + " && pwd"
 	shl.createCMD(&cd, "r")
-	cd = cd
 
 	return cd
 }
