@@ -24,7 +24,7 @@ func (n *NETWORK) Setup(cf *core.Config) error {
 		return ferr
 	}
 
-	if !strings.Contains(cf.Url, "http://") || !strings.Contains(cf.Url, "https://") {
+	if !strings.Contains(cf.Url, "http://") && !strings.Contains(cf.Url, "https://") {
 		cf.Url = "http://" + cf.Url
 	}
 
