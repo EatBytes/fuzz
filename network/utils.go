@@ -18,6 +18,7 @@ func (n *NETWORK) Setup(cf *core.Config) error {
 	cf.Url = strings.TrimSpace(cf.Url)
 	cf.Method = strings.TrimSpace(strings.ToUpper(cf.Method))
 	cf.Parameter = strings.TrimSpace(cf.Parameter)
+	cf.Key = strings.TrimSpace(cf.Key)
 
 	if cf.Url == "" {
 		ferr = ferror.Default("The url should be specified")
@@ -39,6 +40,10 @@ func (n *NETWORK) Setup(cf *core.Config) error {
 
 	if cf.Parameter == "" {
 		cf.Parameter = "fuzzer"
+	}
+
+	if cf.Key == "" {
+		cf.Key = "FromRussiaWithLove<3"
 	}
 
 	cf.Crypt = false

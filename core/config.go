@@ -5,5 +5,6 @@ type Config struct {
 	Method    string
 	Parameter string
 	Shmethod  int
+	Key       string
 	Crypt     bool
 }

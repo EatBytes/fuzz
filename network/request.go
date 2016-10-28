@@ -49,6 +49,8 @@ func (n *NETWORK) buildRequest(str string) (*Request, error) {
 		return nil, err
 	}
 
+	req.Http.Header.Add("RAZBOYNIK_KEY", n.config.Key)
+
 	return req, nil
 }
 
