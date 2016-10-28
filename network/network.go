@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/eatbytes/fuzz/core"
-	"github.com/eatbytes/fuzz/ferror"
+	"github.com/eatbytes/razboy/core"
+	"github.com/eatbytes/razboy/ferror"
 )
 
 const (

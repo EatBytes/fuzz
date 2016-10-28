@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/eatbytes/fuzz/normalizer"
+	"github.com/eatbytes/razboy/normalizer"
 )
 
 type Request struct {

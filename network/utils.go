@@ -3,9 +3,9 @@ package network
 import (
 	"strings"
 
-	"github.com/eatbytes/fuzz/core"
-	"github.com/eatbytes/fuzz/ferror"
-	"github.com/eatbytes/fuzz/normalizer"
+	"github.com/eatbytes/razboy/core"
+	"github.com/eatbytes/razboy/ferror"
+	"github.com/eatbytes/razboy/normalizer"
 )
 
 func (n *NETWORK) IsSetup() bool {

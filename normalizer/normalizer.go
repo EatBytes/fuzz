@@ -3,7 +3,7 @@ package normalizer
 import (
 	"encoding/base64"
 
-	"github.com/eatbytes/fuzz/ferror"
+	"github.com/eatbytes/razboy/ferror"
 )
 
 func Encode(str string) string {
