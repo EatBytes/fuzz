@@ -78,3 +78,7 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 
 	return body, writer.FormDataContentType(), nil
 }
+
+func (php *PHP) Setup(str string) {
+	php._parameter = str
+}

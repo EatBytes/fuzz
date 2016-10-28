@@ -23,22 +23,24 @@ type NETWORK struct {
 	request  *Request
 }
 
-func (n *NETWORK) PrepareUpload(bytes *bytes.Buffer, bondary string) (*Request, error) {
-	var ferr ferror.FuzzerError
+func (n *NETWORK) PrepareUpload(bts *bytes.Buffer, bondary string) (*Request, error) {
 	var req *Request
 	var err error
 
-	if !n.IsSetup() {
-		ferr = ferror.SetupErr()
-		return nil, ferr
+	req = &Request{
+		url:    n.config.Url,
+		status: true,
 	}
 
-	req.Http, err = http.NewRequest(POST, n.config.Url, bytes)
+	if !n.IsSetup() {
+		return nil, ferror.SetupErr()
+	}
+
+	req.Http, err = http.NewRequest(POST, n.config.Url, bts)
 	req.Http.Header.Set("Content-Type", bondary)
 
 	if err != nil {
-		ferr := ferror.BuildRequestErr(err)
-		return nil, ferr
+		return nil, ferror.BuildRequestErr(err)
 	}
 
 	return req, nil
