@@ -6,5 +6,6 @@ type Config struct {
 	Parameter string
 	Shmethod  int
 	Key       string
+	Base64    bool
 	Crypt     bool
 }

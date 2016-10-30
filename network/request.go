@@ -26,8 +26,11 @@ func (n *NETWORK) buildRequest(str string) (*Request, error) {
 	}
 
 	req.status = true
-	req.cmd = normalizer.Encode(req.raw)
 	req.url = n.config.Url
+
+	if n.config.Base64 {
+		req.cmd = normalizer.Encode(req.raw)
+	}
 
 	switch n.config.Method {
 	case POST:
@@ -49,7 +52,9 @@ func (n *NETWORK) buildRequest(str string) (*Request, error) {
 		return nil, err
 	}
 
-	req.Http.Header.Add("RAZBOYNIK_KEY", n.config.Key)
+	if n.config.Key != "" {
+		req.Http.Header.Add(KEY, n.config.Key)
+	}
 
 	return req, nil
 }

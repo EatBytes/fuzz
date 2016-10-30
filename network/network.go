@@ -13,6 +13,8 @@ const (
 	POST   = "POST"
 	HEADER = "HEADER"
 	COOKIE = "COOKIE"
+	KEY    = "RAZBOYNIK_KEY"
+	PARAM  = "razboy"
 )
 
 type NETWORK struct {
@@ -23,7 +25,7 @@ type NETWORK struct {
 	request  *Request
 }
 
-func (n *NETWORK) PrepareUpload(bts *bytes.Buffer, bondary string) (*Request, error) {
+func (n *NETWORK) PrepareUpload(buf *bytes.Buffer, bondary string) (*Request, error) {
 	var req *Request
 	var err error
 
@@ -36,8 +38,12 @@ func (n *NETWORK) PrepareUpload(bts *bytes.Buffer, bondary string) (*Request, er
 		return nil, ferror.SetupErr()
 	}
 
-	req.Http, err = http.NewRequest(POST, n.config.Url, bts)
+	req.Http, err = http.NewRequest(POST, n.config.Url, buf)
 	req.Http.Header.Set("Content-Type", bondary)
+
+	if n.config.Key != "" {
+		req.Http.Header.Add(KEY, n.config.Key)
+	}
 
 	if err != nil {
 		return nil, ferror.BuildRequestErr(err)

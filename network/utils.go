@@ -39,11 +39,7 @@ func (n *NETWORK) Setup(cf *core.Config) error {
 	}
 
 	if cf.Parameter == "" {
-		cf.Parameter = "fuzzer"
-	}
-
-	if cf.Key == "" {
-		cf.Key = "FromRussiaWithLove<3"
+		cf.Parameter = PARAM
 	}
 
 	cf.Crypt = false

