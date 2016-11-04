@@ -1,52 +1,12 @@
 package network
 
 import (
-	"strings"
-
-	"github.com/eatbytes/razboy/core"
 	"github.com/eatbytes/razboy/ferror"
 	"github.com/eatbytes/razboy/normalizer"
 )
 
 func (n *NETWORK) IsSetup() bool {
 	return n.status
-}
-
-func (n *NETWORK) Setup(cf *core.Config) error {
-	var ferr ferror.FuzzerError
-
-	cf.Url = strings.TrimSpace(cf.Url)
-	cf.Method = strings.TrimSpace(strings.ToUpper(cf.Method))
-	cf.Parameter = strings.TrimSpace(cf.Parameter)
-	cf.Key = strings.TrimSpace(cf.Key)
-
-	if cf.Url == "" {
-		ferr = ferror.Default("The url should be specified")
-		return ferr
-	}
-
-	if !strings.Contains(cf.Url, "http://") && !strings.Contains(cf.Url, "https://") {
-		cf.Url = "http://" + cf.Url
-	}
-
-	if cf.Method != GET && cf.Method != POST && cf.Method != HEADER && cf.Method != COOKIE && cf.Method != "" {
-		ferr = ferror.Default("The method (" + cf.Method + ") is not a valid one. Please choose between: GET, POST, HEADER or COOKIE.")
-		return ferr
-	}
-
-	if cf.Method == "" {
-		cf.Method = GET
-	}
-
-	if cf.Parameter == "" {
-		cf.Parameter = PARAM
-	}
-
-	cf.Crypt = false
-	n.config = cf
-	n.status = true
-
-	return nil
 }
 
 func (n *NETWORK) Test() (bool, error) {
@@ -61,10 +21,10 @@ func (n *NETWORK) Test() (bool, error) {
 		return false, err
 	}
 
-	r = resp.GetResultStr()
+	r = resp.GetResult()
 
-	if r != normalizer.Encode("1") {
-		return false, ferror.TestErr(resp.Http, r)
+	if r != "1" {
+		return false, ferror.TestErr(resp.Http, n.request.Http, r)
 	}
 
 	return true, nil

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/eatbytes/razboy/core"
 	"github.com/eatbytes/razboy/normalizer"
 )
 
@@ -14,35 +15,34 @@ type Request struct {
 	raw    string
 	data   *url.Values
 	status bool
-	url    string
+	config core.Config
 }
 
-func (n *NETWORK) buildRequest(str string) (*Request, error) {
+func (n *NETWORK) CreateRequest(str string) (*Request, error) {
 	var req *Request
 	var err error
 
 	req = &Request{
-		raw: str,
+		raw:    str,
+		status: true,
+		config: *n.config,
 	}
 
-	req.status = true
-	req.url = n.config.Url
-
-	if n.config.Base64 {
+	if !n.config.Raw {
 		req.cmd = normalizer.Encode(req.raw)
 	}
 
-	switch n.config.Method {
+	switch req.config.Method {
 	case POST:
-		err = n.buildPOSTConfig(req)
+		err = req.buildPOSTConfig()
 		break
 	case HEADER:
-		err = n.buildHEADERConfig(req)
+		err = req.buildHEADERConfig()
 		break
 	case COOKIE:
 		break
 	case GET:
-		err = n.buildGETConfig(req)
+		err = req.buildGETConfig()
 		break
 	default:
 		req.status = false
@@ -52,39 +52,45 @@ func (n *NETWORK) buildRequest(str string) (*Request, error) {
 		return nil, err
 	}
 
-	if n.config.Key != "" {
-		req.Http.Header.Add(KEY, n.config.Key)
-	}
-
 	return req, nil
 }
 
-func (n *NETWORK) buildPOSTConfig(r *Request) error {
+func (req *Request) buildPOSTConfig() error {
 	var form url.Values
 	var data *bytes.Buffer
 	var err error
 
 	form = url.Values{}
-	form.Set(n.config.Parameter, r.cmd)
-	r.data = &form
+	form.Set(req.config.Parameter, req.cmd)
+
+	if req.config.Key != "" {
+		form.Add(KEY, req.config.Key)
+	}
+
+	req.data = &form
 
 	data = bytes.NewBufferString(form.Encode())
-	r.Http, err = http.NewRequest(POST, r.url, data)
+	req.Http, err = http.NewRequest(POST, req.config.Url, data)
 
 	if err != nil {
 		return err
 	}
 
-	r.Http.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Http.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	return nil
 }
 
-func (n *NETWORK) buildGETConfig(r *Request) error {
+func (req *Request) buildGETConfig() error {
 	var err error
 
-	r.url = n.config.Url + "?" + n.config.Parameter + "=" + r.cmd
-	r.Http, err = http.NewRequest(GET, r.url, nil)
+	req.config.Url = req.config.Url + "?" + req.config.Parameter + "=" + req.cmd
+
+	if req.config.Key != "" {
+		req.config.Url = req.config.Url + "&" + KEY + "=" + req.config.Key
+	}
+
+	req.Http, err = http.NewRequest(GET, req.config.Url, nil)
 
 	if err != nil {
 		return err
@@ -93,19 +99,23 @@ func (n *NETWORK) buildGETConfig(r *Request) error {
 	return nil
 }
 
-func (n *NETWORK) buildHEADERConfig(r *Request) error {
+func (req *Request) buildHEADERConfig() error {
 	var err error
 
-	r.Http, err = http.NewRequest(GET, r.url, nil)
+	req.Http, err = http.NewRequest(GET, req.config.Url, nil)
 
 	if err != nil {
 		return err
 	}
 
-	r.Http.Header.Add(n.config.Parameter, r.cmd)
+	req.Http.Header.Add(req.config.Parameter, req.cmd)
+
+	if req.config.Key != "" {
+		req.Http.Header.Add(KEY, req.config.Key)
+	}
 
 	return nil
 }
 
-func (n *NETWORK) buildCOOKIEConfig(r *Request) {
+func (req *Request) buildCOOKIEConfig() {
 }

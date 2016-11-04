@@ -1,8 +1,16 @@
 package shell
 
+import "github.com/eatbytes/razboy/core"
+
 type SHELL struct {
-	method  int
+	config  *core.Config
 	context string
+}
+
+func Create(config *core.Config) *SHELL {
+	return &SHELL{
+		config: config,
+	}
 }
 
 func (shl *SHELL) SetContext(str string) {
@@ -30,9 +38,9 @@ func (shl *SHELL) createCMD(cmd *string, r string) {
 
 	shellCMD = contexter + *cmd
 
-	if shl.method == 0 {
+	if shl.config.Shmethod == 0 {
 		shellCMD = shl.getSystemCMD(shellCMD, r)
-	} else if shl.method == 1 {
+	} else if shl.config.Shmethod == 1 {
 		shellCMD = shl.getShellExecCMD(shellCMD, r)
 	}
 

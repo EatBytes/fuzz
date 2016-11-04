@@ -3,13 +3,15 @@ package network
 import (
 	"io/ioutil"
 	"net/http"
+
+	"github.com/eatbytes/razboy/core"
+	"github.com/eatbytes/razboy/normalizer"
 )
 
 type Response struct {
-	Http      *http.Response
-	body      []byte
-	parameter string
-	method    string
+	Http   *http.Response
+	body   []byte
+	config core.Config
 }
 
 func (resp *Response) GetBody() []byte {
@@ -37,7 +39,7 @@ func (resp *Response) GetBodyStr() string {
 }
 
 func (resp *Response) GetHeaderStr() string {
-	return resp.Http.Header.Get(resp.parameter)
+	return resp.Http.Header.Get(resp.config.Parameter)
 }
 
 func (resp *Response) GetResultStrByMethod(m string) string {
@@ -52,5 +54,17 @@ func (resp *Response) GetResultStrByMethod(m string) string {
 }
 
 func (resp *Response) GetResultStr() string {
-	return resp.GetResultStrByMethod(resp.method)
+	return resp.GetResultStrByMethod(resp.config.Method)
+}
+
+func (resp *Response) GetResult() string {
+	var str string
+
+	str = resp.GetBodyStr()
+
+	if !resp.config.Raw {
+		str, _ = normalizer.Decode(str)
+	}
+
+	return str
 }

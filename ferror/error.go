@@ -69,11 +69,3 @@ func NormalizeErr(err error) FuzzerError {
 		bag: err,
 	}
 }
-
-func TestErr(r *http.Response, b string) FuzzerError {
-	return FuzzerError{
-		msg:      "Error: Server doesn't respond well to test",
-		resp:     r,
-		respBody: b,
-	}
-}

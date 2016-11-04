@@ -3,6 +3,7 @@ package network
 import (
 	"bytes"
 	"net/http"
+	"strings"
 
 	"github.com/eatbytes/razboy/core"
 	"github.com/eatbytes/razboy/ferror"
@@ -14,7 +15,7 @@ const (
 	HEADER = "HEADER"
 	COOKIE = "COOKIE"
 	KEY    = "RAZBOYNIK_KEY"
-	PARAM  = "razboy"
+	PARAM  = "razboynik"
 )
 
 type NETWORK struct {
@@ -25,24 +26,62 @@ type NETWORK struct {
 	request  *Request
 }
 
+func Create(config *core.Config) (*NETWORK, error) {
+	var n *NETWORK
+
+	config.Url = strings.TrimSpace(config.Url)
+	config.Method = strings.TrimSpace(strings.ToUpper(config.Method))
+	config.Parameter = strings.TrimSpace(config.Parameter)
+	config.Key = strings.TrimSpace(config.Key)
+
+	if config.Url == "" {
+		return nil, ferror.Default("The url should be specified")
+	}
+
+	if !strings.Contains(config.Url, "http://") && !strings.Contains(config.Url, "https://") {
+		config.Url = "http://" + config.Url
+	}
+
+	if config.Method == "" {
+		config.Method = GET
+	}
+
+	if config.Method != GET && config.Method != POST && config.Method != HEADER && config.Method != COOKIE {
+		return nil, ferror.Default("The method (" + config.Method + ") is not a valid one. Please choose between: GET, POST, HEADER or COOKIE.")
+	}
+
+	if config.Parameter == "" {
+		config.Parameter = PARAM
+	}
+
+	config.Crypt = false
+
+	n = &NETWORK{
+		config: config,
+		status: true,
+	}
+
+	return n, nil
+}
+
 func (n *NETWORK) PrepareUpload(buf *bytes.Buffer, bondary string) (*Request, error) {
 	var req *Request
 	var err error
-
-	req = &Request{
-		url:    n.config.Url,
-		status: true,
-	}
 
 	if !n.IsSetup() {
 		return nil, ferror.SetupErr()
 	}
 
-	req.Http, err = http.NewRequest(POST, n.config.Url, buf)
+	req = &Request{
+		config: *n.config,
+		status: true,
+	}
+
+	req.Http, err = http.NewRequest(POST, req.config.Url, buf)
 	req.Http.Header.Set("Content-Type", bondary)
 
 	if n.config.Key != "" {
-		req.Http.Header.Add(KEY, n.config.Key)
+		req.Http.Header.Add(KEY, req.config.Key)
 	}
 
 	if err != nil {
@@ -60,7 +99,7 @@ func (n *NETWORK) Prepare(r string) (*Request, error) {
 		return nil, ferror.SetupErr()
 	}
 
-	req, err = n.buildRequest(r)
+	req, err = n.CreateRequest(r)
 
 	if err != nil {
 		return nil, ferror.BuildRequestErr(err)
@@ -99,10 +138,9 @@ func (n *NETWORK) Send(req *Request) (*Response, error) {
 	}
 
 	response := &Response{
-		resp,
-		nil,
-		n.config.Parameter,
-		n.config.Method,
+		Http:   resp,
+		body:   nil,
+		config: req.config,
 	}
 
 	n.response = response

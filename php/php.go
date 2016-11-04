@@ -7,13 +7,21 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/eatbytes/razboy/core"
 	"github.com/eatbytes/razboy/ferror"
 	"github.com/eatbytes/razboy/normalizer"
 )
 
+const KEY = "RAZBOYNIK_KEY"
+
 type PHP struct {
-	parameter string
-	base64    bool
+	config *core.Config
+}
+
+func Create(config *core.Config) *PHP {
+	return &PHP{
+		config: config,
+	}
 }
 
 func buildHeader(dir string) string {
@@ -52,7 +60,7 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 
 	phpR = "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
 
-	if php.base64 {
+	if !php.config.Raw {
 		phpR = normalizer.Encode(phpR)
 	}
 
@@ -73,7 +81,11 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 
 	_, err = io.Copy(part, file)
 
-	writer.WriteField(php.parameter, phpR)
+	writer.WriteField(php.config.Parameter, phpR)
+
+	if php.config.Key != "" {
+		writer.WriteField(KEY, php.config.Key)
+	}
 
 	err = writer.Close()
 	if err != nil {
@@ -81,9 +93,4 @@ func (php *PHP) Upload(path, dir string) (*bytes.Buffer, string, error) {
 	}
 
 	return body, writer.FormDataContentType(), nil
-}
-
-func (php *PHP) Setup(p string, b bool) {
-	php.parameter = p
-	php.base64 = b
 }
