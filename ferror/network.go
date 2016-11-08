@@ -14,11 +14,11 @@ type NetworkError struct {
 
 func (e NetworkError) Error() string {
 	str := "%v \n\n" +
+		"     request: %v\n\n" +
 		"     response: %v\n" +
-		"          body-> %v\n" +
-		"     request: %v\n"
+		"          body-> %v\n"
 
-	return fmt.Sprintf(str, e.msg, e.resp, e.body, e.req)
+	return fmt.Sprintf(str, e.msg, e.req, e.resp, e.body)
 }
 
 func TestErr(r *http.Response, req *http.Request, b string) NetworkError {

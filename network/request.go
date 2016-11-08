@@ -19,8 +19,10 @@ type Request struct {
 }
 
 func (n *NETWORK) CreateRequest(str string) (*Request, error) {
-	var req *Request
-	var err error
+	var (
+		req *Request
+		err error
+	)
 
 	req = &Request{
 		raw:    str,
@@ -40,6 +42,7 @@ func (n *NETWORK) CreateRequest(str string) (*Request, error) {
 		err = req.buildHEADERConfig()
 		break
 	case COOKIE:
+		err = req.buildCOOKIEConfig()
 		break
 	case GET:
 		err = req.buildGETConfig()
@@ -56,9 +59,11 @@ func (n *NETWORK) CreateRequest(str string) (*Request, error) {
 }
 
 func (req *Request) buildPOSTConfig() error {
-	var form url.Values
-	var data *bytes.Buffer
-	var err error
+	var (
+		form url.Values
+		data *bytes.Buffer
+		err  error
+	)
 
 	form = url.Values{}
 	form.Set(req.config.Parameter, req.cmd)
@@ -117,5 +122,22 @@ func (req *Request) buildHEADERConfig() error {
 	return nil
 }
 
-func (req *Request) buildCOOKIEConfig() {
+func (req *Request) buildCOOKIEConfig() error {
+	var (
+		cookie, kcookie *http.Cookie
+		err             error
+	)
+
+	req.Http, err = http.NewRequest(GET, req.config.Url, nil)
+
+	if err != nil {
+		return err
+	}
+
+	cookie = &http.Cookie{Name: req.config.Parameter, Value: req.cmd}
+	kcookie = &http.Cookie{Name: KEY, Value: req.config.Key}
+	req.Http.AddCookie(cookie)
+	req.Http.AddCookie(kcookie)
+
+	return nil
 }

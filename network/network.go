@@ -65,8 +65,10 @@ func Create(config *core.Config) (*NETWORK, error) {
 }
 
 func (n *NETWORK) PrepareUpload(buf *bytes.Buffer, bondary string) (*Request, error) {
-	var req *Request
-	var err error
+	var (
+		req *Request
+		err error
+	)
 
 	if !n.IsSetup() {
 		return nil, ferror.SetupErr()
@@ -92,8 +94,10 @@ func (n *NETWORK) PrepareUpload(buf *bytes.Buffer, bondary string) (*Request, er
 }
 
 func (n *NETWORK) Prepare(r string) (*Request, error) {
-	var req *Request
-	var err error
+	var (
+		req *Request
+		err error
+	)
 
 	if !n.IsSetup() {
 		return nil, ferror.SetupErr()
@@ -113,10 +117,12 @@ func (n *NETWORK) Prepare(r string) (*Request, error) {
 }
 
 func (n *NETWORK) Send(req *Request) (*Response, error) {
-	var client *http.Client
-	var resp *http.Response
-	var err error
-	var status int
+	var (
+		client *http.Client
+		resp   *http.Response
+		err    error
+		status int
+	)
 
 	if !n.IsSetup() {
 		return nil, ferror.SetupErr()

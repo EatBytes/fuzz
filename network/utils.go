@@ -10,9 +10,11 @@ func (n *NETWORK) IsSetup() bool {
 }
 
 func (n *NETWORK) Test() (bool, error) {
-	var r string
-	var resp *Response
-	var err error
+	var (
+		r    string
+		resp *Response
+		err  error
+	)
 
 	r = "$r=1;" + n.Response()
 	resp, err = n.PrepareSend(r)
@@ -31,8 +33,10 @@ func (n *NETWORK) Test() (bool, error) {
 }
 
 func (n *NETWORK) QuickSend(str string) (string, error) {
-	var resp *Response
-	var err error
+	var (
+		resp *Response
+		err  error
+	)
 
 	resp, err = n.PrepareSend(str)
 
@@ -44,9 +48,11 @@ func (n *NETWORK) QuickSend(str string) (string, error) {
 }
 
 func (n *NETWORK) QuickProcess(str string) (string, error) {
-	var resp string
-	var result string
-	var err error
+	var (
+		resp   string
+		result string
+		err    error
+	)
 
 	resp, err = n.QuickSend(str)
 
@@ -64,9 +70,11 @@ func (n *NETWORK) QuickProcess(str string) (string, error) {
 }
 
 func (n *NETWORK) PrepareSend(str string) (*Response, error) {
-	var req *Request
-	var resp *Response
-	var err error
+	var (
+		req  *Request
+		resp *Response
+		err  error
+	)
 
 	req, err = n.Prepare(str)
 
@@ -84,10 +92,11 @@ func (n *NETWORK) PrepareSend(str string) (*Response, error) {
 }
 
 func (n *NETWORK) Response() string {
-	switch n.config.Method {
-	case HEADER:
+	if n.config.Method == HEADER {
 		return "header('" + n.config.Parameter + ":' . " + normalizer.PHPEncode("$r") + ");exit();"
-	case COOKIE:
+	}
+
+	if n.config.Method == COOKIE {
 		return "setcookie('" + n.config.Parameter + "', " + normalizer.PHPEncode("$r") + ");exit();"
 	}
 
