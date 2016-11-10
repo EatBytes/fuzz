@@ -1,25 +1,18 @@
 package ferror
 
-import (
-	"fmt"
-	"net/http"
-)
+import "fmt"
 
 type FuzzerError struct {
-	code     int
-	msg      string
-	bag      error
-	resp     *http.Response
-	respBody string
+	code int
+	msg  string
+	bag  error
 }
 
 func (e FuzzerError) Error() string {
 	str := "%v \n\n" +
-		"     bag: %v \n" +
-		"     response: %v \n" +
-		"          body-> %v\n"
+		"     bag: %v \n"
 
-	return fmt.Sprintf(str, e.msg, e.bag, e.resp, e.respBody)
+	return fmt.Sprintf(str, e.msg, e.bag)
 }
 
 func SetupErr() FuzzerError {
@@ -67,13 +60,5 @@ func NormalizeErr(err error) FuzzerError {
 	return FuzzerError{
 		msg: "Error: Impossible to normalize the string",
 		bag: err,
-	}
-}
-
-func TestErr(r *http.Response, b string) FuzzerError {
-	return FuzzerError{
-		msg:      "Error: Server doesn't respond well to test",
-		resp:     r,
-		respBody: b,
 	}
 }

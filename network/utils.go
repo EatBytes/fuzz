@@ -1,9 +1,6 @@
 package network
 
 import (
-	"strings"
-
-	"github.com/eatbytes/razboy/core"
 	"github.com/eatbytes/razboy/ferror"
 	"github.com/eatbytes/razboy/normalizer"
 )
@@ -12,47 +9,12 @@ func (n *NETWORK) IsSetup() bool {
 	return n.status
 }
 
-func (n *NETWORK) Setup(cf *core.Config) error {
-	var ferr ferror.FuzzerError
-
-	cf.Url = strings.TrimSpace(cf.Url)
-	cf.Method = strings.TrimSpace(strings.ToUpper(cf.Method))
-	cf.Parameter = strings.TrimSpace(cf.Parameter)
-	cf.Key = strings.TrimSpace(cf.Key)
-
-	if cf.Url == "" {
-		ferr = ferror.Default("The url should be specified")
-		return ferr
-	}
-
-	if !strings.Contains(cf.Url, "http://") && !strings.Contains(cf.Url, "https://") {
-		cf.Url = "http://" + cf.Url
-	}
-
-	if cf.Method != GET && cf.Method != POST && cf.Method != HEADER && cf.Method != COOKIE && cf.Method != "" {
-		ferr = ferror.Default("The method (" + cf.Method + ") is not a valid one. Please choose between: GET, POST, HEADER or COOKIE.")
-		return ferr
-	}
-
-	if cf.Method == "" {
-		cf.Method = GET
-	}
-
-	if cf.Parameter == "" {
-		cf.Parameter = PARAM
-	}
-
-	cf.Crypt = false
-	n.config = cf
-	n.status = true
-
-	return nil
-}
-
 func (n *NETWORK) Test() (bool, error) {
-	var r string
-	var resp *Response
-	var err error
+	var (
+		r    string
+		resp *Response
+		err  error
+	)
 
 	r = "$r=1;" + n.Response()
 	resp, err = n.PrepareSend(r)
@@ -61,18 +23,20 @@ func (n *NETWORK) Test() (bool, error) {
 		return false, err
 	}
 
-	r = resp.GetResultStr()
+	r = resp.GetResult()
 
-	if r != normalizer.Encode("1") {
-		return false, ferror.TestErr(resp.Http, r)
+	if r != "1" {
+		return false, ferror.TestErr(resp.Http, n.request.Http, r)
 	}
 
 	return true, nil
 }
 
 func (n *NETWORK) QuickSend(str string) (string, error) {
-	var resp *Response
-	var err error
+	var (
+		resp *Response
+		err  error
+	)
 
 	resp, err = n.PrepareSend(str)
 
@@ -84,9 +48,11 @@ func (n *NETWORK) QuickSend(str string) (string, error) {
 }
 
 func (n *NETWORK) QuickProcess(str string) (string, error) {
-	var resp string
-	var result string
-	var err error
+	var (
+		resp   string
+		result string
+		err    error
+	)
 
 	resp, err = n.QuickSend(str)
 
@@ -104,9 +70,11 @@ func (n *NETWORK) QuickProcess(str string) (string, error) {
 }
 
 func (n *NETWORK) PrepareSend(str string) (*Response, error) {
-	var req *Request
-	var resp *Response
-	var err error
+	var (
+		req  *Request
+		resp *Response
+		err  error
+	)
 
 	req, err = n.Prepare(str)
 
@@ -124,10 +92,11 @@ func (n *NETWORK) PrepareSend(str string) (*Response, error) {
 }
 
 func (n *NETWORK) Response() string {
-	switch n.config.Method {
-	case HEADER:
+	if n.config.Method == HEADER {
 		return "header('" + n.config.Parameter + ":' . " + normalizer.PHPEncode("$r") + ");exit();"
-	case COOKIE:
+	}
+
+	if n.config.Method == COOKIE {
 		return "setcookie('" + n.config.Parameter + "', " + normalizer.PHPEncode("$r") + ");exit();"
 	}
 

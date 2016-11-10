@@ -11,13 +11,15 @@ func Encode(str string) string {
 }
 
 func Decode(str string) (string, error) {
-	var sDec []byte
-	var err error
+	var (
+		sDec []byte
+		err  error
+	)
 
 	sDec, err = base64.StdEncoding.DecodeString(str)
 
 	if err != nil {
-		return "", ferror.NormalizeErr(err)
+		return str, ferror.NormalizeErr(err)
 	}
 
 	return string(sDec), nil

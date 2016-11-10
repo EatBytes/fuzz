@@ -3,18 +3,24 @@ package network
 import (
 	"io/ioutil"
 	"net/http"
+
+	"net/url"
+
+	"github.com/eatbytes/razboy/core"
+	"github.com/eatbytes/razboy/normalizer"
 )
 
 type Response struct {
-	Http      *http.Response
-	body      []byte
-	parameter string
-	method    string
+	Http   *http.Response
+	body   []byte
+	config core.Config
 }
 
 func (resp *Response) GetBody() []byte {
-	var buffer []byte
-	var err error
+	var (
+		buffer []byte
+		err    error
+	)
 
 	if resp.body != nil {
 		return resp.body
@@ -37,7 +43,26 @@ func (resp *Response) GetBodyStr() string {
 }
 
 func (resp *Response) GetHeaderStr() string {
-	return resp.Http.Header.Get(resp.parameter)
+	return resp.Http.Header.Get(resp.config.Parameter)
+}
+
+func (resp *Response) GetCookieStr() string {
+	var (
+		str     string
+		cookies []*http.Cookie
+		cookie  *http.Cookie
+	)
+
+	cookies = resp.Http.Cookies()
+
+	for _, cookie = range cookies {
+		if cookie.Name == resp.config.Parameter {
+			str, _ = url.QueryUnescape(cookie.Value)
+			return str
+		}
+	}
+
+	return ""
 }
 
 func (resp *Response) GetResultStrByMethod(m string) string {
@@ -46,11 +71,24 @@ func (resp *Response) GetResultStrByMethod(m string) string {
 	}
 
 	if m == COOKIE {
+		return resp.GetCookieStr()
 	}
 
 	return resp.GetBodyStr()
 }
 
 func (resp *Response) GetResultStr() string {
-	return resp.GetResultStrByMethod(resp.method)
+	return resp.GetResultStrByMethod(resp.config.Method)
+}
+
+func (resp *Response) GetResult() string {
+	var str string
+
+	str = resp.GetResultStr()
+
+	if !resp.config.Raw {
+		str, _ = normalizer.Decode(str)
+	}
+
+	return str
 }
