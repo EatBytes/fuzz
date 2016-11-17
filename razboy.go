@@ -1,27 +1,23 @@
 package razboy
 
 import (
+	"errors"
 	"net/http"
 
-	"github.com/eatbytes/razboy/ferror"
+	"github.com/eatbytes/razboy/checker"
+	"github.com/eatbytes/razboy/core"
 )
 
-func CreatePHP() {
+func main() {}
 
-}
-
-func createSHELL() {
-
-}
-
-func Send(req *REQUEST) (*razResponse, error) {
+func Send(req *core.REQUEST) (*RazResponse, error) {
 	var (
-		rzReq *razRequest
-		rzRes *razResponse
+		rzReq *RazRequest
+		rzRes *RazResponse
 		err   error
 	)
 
-	err = _check(req)
+	err = checker.Check(req)
 
 	if err != nil {
 		return nil, err
@@ -42,63 +38,80 @@ func Send(req *REQUEST) (*razResponse, error) {
 	return rzRes, nil
 }
 
-func Prepare(req *REQUEST) (*razRequest, error) {
+func Prepare(req *core.REQUEST) (*RazRequest, error) {
 	var (
-		rzReq *razRequest
+		rzReq *RazRequest
 		err   error
 	)
 
-	if !req.setup {
-		return nil, ferror.SetupErr()
+	err = checker.Check(req)
+
+	if err != nil {
+		return nil, err
 	}
 
-	if req.PHPc.IsUpload() {
+	if req.PHPc.Upload {
 		rzReq, err = _createUploadRequest(req)
 	} else {
 		rzReq, err = _createSimpleRequest(req)
 	}
 
 	if err != nil {
-		return nil, ferror.BuildRequestErr(err)
-	}
-
-	if !req.setup {
-		return nil, ferror.SetupErr()
+		return nil, err
 	}
 
 	return rzReq, nil
 }
 
-func SendRequest(rzReq *razRequest) (*razResponse, error) {
+func SendRequest(rzReq *RazRequest) (*RazResponse, error) {
 	var (
-		rzRes  *razResponse
+		rzRes  *RazResponse
 		client *http.Client
 		resp   *http.Response
 		err    error
-		status int
 	)
 
 	if !rzReq.status {
-		return nil, ferror.SetupErr()
+		return nil, errors.New("Problem with request")
 	}
 
 	client = &http.Client{}
 	resp, err = client.Do(rzReq.http)
 
 	if err != nil {
-		status = 500
-
-		if resp != nil {
-			status = resp.StatusCode
-		}
-
-		return nil, ferror.RequestErr(err, status)
+		return nil, err
 	}
 
-	rzRes = &razResponse{
-		http: resp,
-		body: nil,
+	rzRes = &RazResponse{
+		http:  resp,
+		rzReq: rzReq,
 	}
 
 	return rzRes, nil
+}
+
+func Test() (bool, error) {
+	var (
+		r     string
+		req   *core.REQUEST
+		rzRes *RazResponse
+		err   error
+	)
+
+	//r = "$r=1;" + n.Response()
+	req = &core.REQUEST{}
+
+	rzRes, err = Send(req)
+
+	if err != nil {
+		return false, err
+	}
+
+	r = rzRes.GetResult()
+
+	if r != "1" {
+		return false, nil
+	}
+
+	return true, nil
 }

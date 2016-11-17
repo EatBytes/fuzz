@@ -1,80 +1,33 @@
 package razboy
 
-import (
-	"bytes"
-)
+import "net/http"
 
-type REQUEST struct {
-	Type  string
-	PHPc  PHPCONFIG
-	SHLc  SHELLCONFIG
-	SRVc  SERVERCONFIG
-	setup bool
-}
-
-type PHPCONFIG struct {
-	upload  bool
-	buffer  *bytes.Buffer
-	bondary string
-}
-
-type SHELLCONFIG struct {
-	method  string
-	context string
-}
-
-type SERVERCONFIG struct {
+type RazRequest struct {
 	url       string
 	method    string
 	parameter string
-	key       string
-	raw       bool
+	cmd       string
+	IsRaw     bool
+	status    bool
+	http      *http.Request
 }
 
-func (r REQUEST) IsPHP() bool {
-	if r.Type == "PHP" {
-		return true
-	}
-
-	return false
+func (rzReq RazRequest) GetCMD() string {
+	return rzReq.cmd
 }
 
-func (r REQUEST) IsSHELL() bool {
-	if r.Type == "SHELL" {
-		return true
-	}
-
-	return false
+func (rzReq RazRequest) GetParameter() string {
+	return rzReq.parameter
 }
 
-func (php PHPCONFIG) IsUpload() bool {
-	return php.upload
+func (rzReq RazRequest) GetMethod() string {
+	return rzReq.method
 }
 
-func (srv SERVERCONFIG) IsRaw() bool {
-	return srv.raw
+func (rzReq RazRequest) GetStatus() bool {
+	return rzReq.status
 }
 
-func (srv SERVERCONFIG) GetMethod() string {
-	return srv.method
-}
-
-func (srv SERVERCONFIG) GetUrl() string {
-	return srv.url
-}
-
-func (srv SERVERCONFIG) GetParameter() string {
-	return srv.parameter
-}
-
-func (srv SERVERCONFIG) GetKey() string {
-	return srv.key
-}
-
-func (srv SERVERCONFIG) IsProtected() bool {
-	if srv.key != "" {
-		return true
-	}
-
-	return false
+func (rzReq RazRequest) GetHTTP() *http.Request {
+	return rzReq.http
 }
