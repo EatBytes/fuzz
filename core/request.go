@@ -31,7 +31,21 @@ func (r REQUEST) IsSHELL() bool {
 	return false
 }
 
-func (r REQUEST) AddResponseLogic() {
+func (r *REQUEST) Build(w ...bool) {
+	if r.Type == "SHELL" {
+		r.Raw = r.SHLc.Cmd
+	} else if r.Type == "PHP" {
+		r.Raw = r.PHPc.Cmd
+	}
+
+	if len(w) > 0 && !w[0] {
+		return
+	}
+
+	r.AddResponseLogic()
+}
+
+func (r *REQUEST) AddResponseLogic() {
 	if r.SRVc.Method == "HEADER" {
 		r.Raw = r.Raw + "header('" + r.SRVc.Parameter + ":' . " + normalizer.PHPEncode("$r") + ");exit();"
 		return
