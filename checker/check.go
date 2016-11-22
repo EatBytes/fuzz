@@ -12,15 +12,15 @@ func Check(req *core.REQUEST) error {
 	err = nil
 
 	if req.Type == "PHP" {
-		err = _checkPHP(&req.PHPc)
+		err = _checkPHP(req.PHPc)
 	} else if req.Type == "SHELL" {
-		err = _checkSHELL(&req.SHLc)
+		err = _checkSHELL(req.SHLc)
 	} else {
 		err = errors.New("The request should have a valid type ('PHP' or 'SHELL')")
 	}
 
 	if err == nil {
-		err = _checkSERVER(&req.SRVc)
+		err = _checkSERVER(req.SRVc)
 	}
 
 	return err

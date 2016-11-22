@@ -5,9 +5,9 @@ import "github.com/eatbytes/razboy/normalizer"
 type REQUEST struct {
 	Type  string
 	Raw   string
-	PHPc  PHPCONFIG
-	SHLc  SHELLCONFIG
-	SRVc  SERVERCONFIG
+	PHPc  *PHPCONFIG
+	SHLc  *SHELLCONFIG
+	SRVc  *SERVERCONFIG
 	setup bool
 }
 
