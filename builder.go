@@ -95,7 +95,7 @@ func _buildRzReqBase(req *core.REQUEST) *RazRequest {
 	}
 
 	if !req.SRVc.Raw {
-		rzReq.cmd = normalizer.Encode(req.Raw)
+		rzReq.cmd = normalizer.Encode(req.Action)
 	}
 
 	return rzReq

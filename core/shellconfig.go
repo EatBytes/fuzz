@@ -8,5 +8,4 @@ type SHELLSCOPE struct {
 type SHELLCONFIG struct {
 	Method string
 	Scope  string
-	Cmd    string
 }
