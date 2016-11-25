@@ -47,7 +47,7 @@ func Prepare(req *REQUEST) (*RazRequest, error) {
 		return nil, err
 	}
 
-	if req.PHPc.Upload {
+	if req.Upload {
 		rzReq, err = _createUploadRequest(req)
 	} else {
 		rzReq, err = _createSimpleRequest(req)

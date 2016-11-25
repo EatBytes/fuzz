@@ -2,57 +2,27 @@ package razboy
 
 import (
 	"errors"
-
-	"github.com/eatbytes/razboy/core"
 )
 
 func Check(req *REQUEST) error {
-	var err error
-
-	err = nil
-
-	if req.Type == "PHP" {
-		err = _checkPHP(req.PHPc)
-	} else if req.Type == "SHELL" {
-		err = _checkSHELL(req.SHLc)
-	} else {
-		err = errors.New("The request should have a valid type ('PHP' or 'SHELL')")
-	}
-
-	if err == nil {
-		err = _checkSERVER(req.SRVc)
-	}
-
-	return err
-}
-
-func _checkPHP(c *core.PHPCONFIG) error {
-	if c == nil {
+	if req == nil {
 		return errors.New("Empty pointer")
 	}
 
-	return nil
+	return _checkSERVER(req)
 }
 
-func _checkSHELL(c *core.SHELLCONFIG) error {
-	if c == nil {
-		return errors.New("Empty pointer")
+func _checkSERVER(req *REQUEST) error {
+	if req.Url == "" {
+		return errors.New("REQUEST [url] should not be empty")
 	}
 
-	return nil
-}
-
-func _checkSERVER(c *core.SERVERCONFIG) error {
-	if c == nil {
-		return errors.New("Empty pointer")
+	if req.Method != "GET" && req.Method != "POST" && req.Method != "HEADER" && req.Method != "COOKIE" {
+		req.Method = "GET"
 	}
 
-	if c.Url == "" {
-		return errors.New("REQUEST -> SERVERCONFIG [url] should not be empty")
-	}
-
-	if c.Method != "GET" && c.Method != "POST" && c.Method != "HEADER" && c.Method != "COOKIE" {
-		c.Method = "GET"
+	if req.Parameter == "" {
+		req.Parameter = "razboynik"
 	}
 
 	return nil

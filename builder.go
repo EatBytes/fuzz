@@ -17,7 +17,7 @@ func _createSimpleRequest(req *REQUEST) (*RazRequest, error) {
 		err   error
 	)
 
-	switch req.SRVc.Method {
+	switch req.Method {
 	case "GET":
 		rzReq, err = _buildGET(req)
 		break
@@ -32,8 +32,8 @@ func _createSimpleRequest(req *REQUEST) (*RazRequest, error) {
 		break
 	}
 
-	if len(req.SRVc.Headers) > 0 {
-		for _, header := range req.SRVc.Headers {
+	if len(req.Headers) > 0 {
+		for _, header := range req.Headers {
 			rzReq.http.Header.Add(header.Key, header.Value)
 		}
 	}
@@ -55,18 +55,18 @@ func _createUploadRequest(req *REQUEST) (*RazRequest, error) {
 
 	rzReq = _buildRzReqBase(req)
 
-	data = req.PHPc.Buffer
+	data = req.Buffer
 
 	writer = multipart.NewWriter(data)
-	writer.WriteField(req.SRVc.Parameter, rzReq.GetCMD())
+	writer.WriteField(req.Parameter, rzReq.GetCMD())
 
-	if req.SRVc.IsProtected() {
-		writer.WriteField(KEY, req.SRVc.Key)
+	if req.IsProtected() {
+		writer.WriteField(KEY, req.Key)
 	}
 
-	req.PHPc.Buffer = data
+	req.Buffer = data
 
-	rzReq.http, err = http.NewRequest("POST", req.SRVc.Url, data)
+	rzReq.http, err = http.NewRequest("POST", req.Url, data)
 
 	if err != nil {
 		return nil, err
@@ -87,13 +87,13 @@ func _buildRzReqBase(req *REQUEST) *RazRequest {
 	var rzReq *RazRequest
 
 	rzReq = &RazRequest{
-		url:       req.SRVc.Url,
-		parameter: req.SRVc.Parameter,
-		method:    req.SRVc.Method,
+		url:       req.Url,
+		parameter: req.Parameter,
+		method:    req.Method,
 		status:    true,
 	}
 
-	if !req.SRVc.Raw {
+	if !req.Raw {
 		rzReq.cmd = normalizer.Encode(req.Action)
 	}
 
@@ -109,10 +109,10 @@ func _buildGET(req *REQUEST) (*RazRequest, error) {
 
 	rzReq = _buildRzReqBase(req)
 
-	url = req.SRVc.Url + "?" + req.SRVc.Parameter + "=" + rzReq.GetCMD()
+	url = req.Url + "?" + req.Parameter + "=" + rzReq.GetCMD()
 
-	if req.SRVc.IsProtected() {
-		url = url + "&" + KEY + "=" + req.SRVc.Key
+	if req.IsProtected() {
+		url += "&" + KEY + "=" + req.Key
 	}
 
 	rzReq.http, err = http.NewRequest("GET", url, nil)
@@ -135,15 +135,15 @@ func _buildPOST(req *REQUEST) (*RazRequest, error) {
 	rzReq = _buildRzReqBase(req)
 
 	form = url.Values{}
-	form.Set(req.SRVc.Parameter, rzReq.GetCMD())
+	form.Set(req.Parameter, rzReq.GetCMD())
 
-	if req.SRVc.IsProtected() {
-		form.Add(KEY, req.SRVc.Key)
+	if req.IsProtected() {
+		form.Add(KEY, req.Key)
 	}
 
 	data = bytes.NewBufferString(form.Encode())
 
-	rzReq.http, err = http.NewRequest("POST", req.SRVc.Url, data)
+	rzReq.http, err = http.NewRequest("POST", req.Url, data)
 
 	if err != nil {
 		return nil, err
@@ -162,16 +162,16 @@ func _buildHEADER(req *REQUEST) (*RazRequest, error) {
 
 	rzReq = _buildRzReqBase(req)
 
-	rzReq.http, err = http.NewRequest("GET", req.SRVc.Url, nil)
+	rzReq.http, err = http.NewRequest("GET", req.Url, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	rzReq.http.Header.Add(req.SRVc.Parameter, rzReq.GetCMD())
+	rzReq.http.Header.Add(req.Parameter, rzReq.GetCMD())
 
-	if req.SRVc.IsProtected() {
-		rzReq.http.Header.Add(KEY, req.SRVc.Key)
+	if req.IsProtected() {
+		rzReq.http.Header.Add(KEY, req.Key)
 	}
 
 	return rzReq, nil
@@ -186,17 +186,17 @@ func _buildCOOKIE(req *REQUEST) (*RazRequest, error) {
 
 	rzReq = _buildRzReqBase(req)
 
-	rzReq.http, err = http.NewRequest("GET", req.SRVc.Url, nil)
+	rzReq.http, err = http.NewRequest("GET", req.Url, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	cookie = &http.Cookie{Name: req.SRVc.Parameter, Value: rzReq.GetCMD()}
+	cookie = &http.Cookie{Name: req.Parameter, Value: rzReq.GetCMD()}
 	rzReq.http.AddCookie(cookie)
 
-	if req.SRVc.IsProtected() {
-		kcookie = &http.Cookie{Name: KEY, Value: req.SRVc.Key}
+	if req.IsProtected() {
+		kcookie = &http.Cookie{Name: KEY, Value: req.Key}
 		rzReq.http.AddCookie(kcookie)
 	}
 
