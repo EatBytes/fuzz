@@ -1,33 +1,32 @@
 package razboy
 
-import "net/http"
+import "github.com/eatbytes/razboy/core"
 
-type RazRequest struct {
-	url       string
-	method    string
-	parameter string
-	cmd       string
-	IsRaw     bool
-	status    bool
-	http      *http.Request
+type REQUEST struct {
+	Type   string
+	Action string
+	PHPc   *core.PHPCONFIG
+	SHLc   *core.SHELLCONFIG
+	SRVc   *core.SERVERCONFIG
+	setup  bool
 }
 
-func (rzReq RazRequest) GetCMD() string {
-	return rzReq.cmd
+func (r REQUEST) IsSetup() bool {
+	return r.setup
 }
 
-func (rzReq RazRequest) GetParameter() string {
-	return rzReq.parameter
+func (r REQUEST) IsPHP() bool {
+	if r.Type == "PHP" {
+		return true
+	}
+
+	return false
 }
 
-func (rzReq RazRequest) GetMethod() string {
-	return rzReq.method
-}
+func (r REQUEST) IsSHELL() bool {
+	if r.Type == "SHELL" {
+		return true
+	}
 
-func (rzReq RazRequest) GetStatus() bool {
-	return rzReq.status
-}
-
-func (rzReq RazRequest) GetHTTP() *http.Request {
-	return rzReq.http
+	return false
 }

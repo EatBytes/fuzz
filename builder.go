@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/eatbytes/razboy/core"
 	"github.com/eatbytes/razboy/normalizer"
 )
 
 const KEY = "RAZBOYNIK_KEY"
 
-func _createSimpleRequest(req *core.REQUEST) (*RazRequest, error) {
+func _createSimpleRequest(req *REQUEST) (*RazRequest, error) {
 	var (
 		rzReq *RazRequest
 		err   error
@@ -46,7 +45,7 @@ func _createSimpleRequest(req *core.REQUEST) (*RazRequest, error) {
 	return rzReq, nil
 }
 
-func _createUploadRequest(req *core.REQUEST) (*RazRequest, error) {
+func _createUploadRequest(req *REQUEST) (*RazRequest, error) {
 	var (
 		rzReq  *RazRequest
 		writer *multipart.Writer
@@ -84,7 +83,7 @@ func _createUploadRequest(req *core.REQUEST) (*RazRequest, error) {
 	return rzReq, nil
 }
 
-func _buildRzReqBase(req *core.REQUEST) *RazRequest {
+func _buildRzReqBase(req *REQUEST) *RazRequest {
 	var rzReq *RazRequest
 
 	rzReq = &RazRequest{
@@ -101,7 +100,7 @@ func _buildRzReqBase(req *core.REQUEST) *RazRequest {
 	return rzReq
 }
 
-func _buildGET(req *core.REQUEST) (*RazRequest, error) {
+func _buildGET(req *REQUEST) (*RazRequest, error) {
 	var (
 		rzReq *RazRequest
 		url   string
@@ -125,7 +124,7 @@ func _buildGET(req *core.REQUEST) (*RazRequest, error) {
 	return rzReq, nil
 }
 
-func _buildPOST(req *core.REQUEST) (*RazRequest, error) {
+func _buildPOST(req *REQUEST) (*RazRequest, error) {
 	var (
 		rzReq *RazRequest
 		form  url.Values
@@ -155,7 +154,7 @@ func _buildPOST(req *core.REQUEST) (*RazRequest, error) {
 	return rzReq, nil
 }
 
-func _buildHEADER(req *core.REQUEST) (*RazRequest, error) {
+func _buildHEADER(req *REQUEST) (*RazRequest, error) {
 	var (
 		rzReq *RazRequest
 		err   error
@@ -178,7 +177,7 @@ func _buildHEADER(req *core.REQUEST) (*RazRequest, error) {
 	return rzReq, nil
 }
 
-func _buildCOOKIE(req *core.REQUEST) (*RazRequest, error) {
+func _buildCOOKIE(req *REQUEST) (*RazRequest, error) {
 	var (
 		rzReq           *RazRequest
 		cookie, kcookie *http.Cookie

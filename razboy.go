@@ -3,21 +3,18 @@ package razboy
 import (
 	"errors"
 	"net/http"
-
-	"github.com/eatbytes/razboy/checker"
-	"github.com/eatbytes/razboy/core"
 )
 
 func main() {}
 
-func Send(req *core.REQUEST) (*RazResponse, error) {
+func Send(req *REQUEST) (*RazResponse, error) {
 	var (
 		rzReq *RazRequest
 		rzRes *RazResponse
 		err   error
 	)
 
-	err = checker.Check(req)
+	err = Check(req)
 
 	if err != nil {
 		return nil, err
@@ -38,13 +35,13 @@ func Send(req *core.REQUEST) (*RazResponse, error) {
 	return rzRes, nil
 }
 
-func Prepare(req *core.REQUEST) (*RazRequest, error) {
+func Prepare(req *REQUEST) (*RazRequest, error) {
 	var (
 		rzReq *RazRequest
 		err   error
 	)
 
-	err = checker.Check(req)
+	err = Check(req)
 
 	if err != nil {
 		return nil, err
@@ -93,13 +90,13 @@ func SendRequest(rzReq *RazRequest) (*RazResponse, error) {
 func Test() (bool, error) {
 	var (
 		r     string
-		req   *core.REQUEST
+		req   *REQUEST
 		rzRes *RazResponse
 		err   error
 	)
 
 	//r = "$r=1;" + n.Response()
-	req = &core.REQUEST{}
+	req = &REQUEST{}
 
 	rzRes, err = Send(req)
 
