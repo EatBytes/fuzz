@@ -2,6 +2,7 @@ package razboy
 
 import (
 	"bytes"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -14,6 +15,7 @@ const KEY = "RAZBOYNIK_KEY"
 func _createSimpleRequest(req *REQUEST) (*RazRequest, error) {
 	var (
 		rzReq *RazRequest
+		proxy *url.URL
 		err   error
 	)
 
@@ -30,6 +32,18 @@ func _createSimpleRequest(req *REQUEST) (*RazRequest, error) {
 	case "COOKIE":
 		rzReq, err = _buildCOOKIE(req)
 		break
+	}
+
+	if req.Proxy != "" {
+		proxy, err = url.Parse("http://proxyIp:proxyPort")
+
+		if err != nil {
+			return nil, err
+		}
+
+		http.DefaultTransport = &http.Transport{
+			Proxy: http.ProxyURL(proxy),
+		}
 	}
 
 	if len(req.Headers) > 0 {
@@ -77,6 +91,8 @@ func _createUploadRequest(req *REQUEST) (*RazRequest, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(writer.FormDataContentType())
 
 	rzReq.http.Header.Add("Content-Type", writer.FormDataContentType())
 

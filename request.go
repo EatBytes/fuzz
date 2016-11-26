@@ -21,6 +21,7 @@ type REQUEST struct {
 	Method      string
 	Parameter   string
 	Key         string
+	Proxy       string
 	Shellmethod string
 	Shellscope  string
 	Raw         bool
