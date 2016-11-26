@@ -1,9 +1,7 @@
 package razboy
 
 import "bytes"
-
-const PHP = "PHP"
-const SHELL = "SHELL"
+import "net/http"
 
 type _shellscope struct {
 	Name    string
@@ -16,42 +14,33 @@ type HEADER struct {
 }
 
 type REQUEST struct {
-	Action      string
-	Url         string
-	Method      string
-	Parameter   string
-	Key         string
-	Proxy       string
-	Shellmethod string
-	Shellscope  string
-	Raw         bool
-	Upload      bool
-	Headers     []HEADER
-	Buffer      *bytes.Buffer
-	setup       bool
+	Action  string
+	Scope   string
+	Upload  bool
+	Headers []HEADER
+	Buffer  *bytes.Buffer
+	c       *Config
+	cmd     string
+	http    *http.Request
+	setup   bool
 }
 
-func CreateRequest(srv [4]string, shl [2]string, php [2]bool) *REQUEST {
+func CreateRequest(action string, scope string, c *Config) *REQUEST {
 	return &REQUEST{
-		Url:         srv[0],
-		Method:      srv[1],
-		Parameter:   srv[2],
-		Key:         srv[3],
-		Shellmethod: shl[0],
-		Shellscope:  shl[1],
-		Raw:         php[0],
-		Upload:      php[1],
+		Action: action,
+		Scope:  scope,
+		c:      c,
 	}
 }
 
-func (r REQUEST) IsProtected() bool {
-	if r.Key != "" {
+func (req REQUEST) IsProtected() bool {
+	if req.c.Key != "" {
 		return true
 	}
 
 	return false
 }
 
-func (r REQUEST) IsSetup() bool {
-	return r.setup
+func (req REQUEST) GetHTTP() *http.Request {
+	return req.http
 }

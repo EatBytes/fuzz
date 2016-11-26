@@ -7,11 +7,10 @@ import (
 
 func main() {}
 
-func Send(req *REQUEST) (*RazResponse, error) {
+func Send(req *REQUEST) (*RESPONSE, error) {
 	var (
-		rzReq *RazRequest
-		rzRes *RazResponse
-		err   error
+		res *RESPONSE
+		err error
 	)
 
 	err = Check(req)
@@ -20,91 +19,84 @@ func Send(req *REQUEST) (*RazResponse, error) {
 		return nil, err
 	}
 
-	rzReq, err = Prepare(req)
+	err = Prepare(req)
 
 	if err != nil {
 		return nil, err
 	}
 
-	rzRes, err = SendRequest(rzReq)
+	res, err = SendRequest(req)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return rzRes, nil
+	return res, nil
 }
 
-func Prepare(req *REQUEST) (*RazRequest, error) {
-	var (
-		rzReq *RazRequest
-		err   error
-	)
+func Prepare(req *REQUEST) error {
+	var err error
 
 	err = Check(req)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if req.Upload {
-		rzReq, err = _createUploadRequest(req)
+		err = _createUploadRequest(req)
 	} else {
-		rzReq, err = _createSimpleRequest(req)
+		err = _createSimpleRequest(req)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return rzReq, nil
+	return err
 }
 
-func SendRequest(rzReq *RazRequest) (*RazResponse, error) {
+func SendRequest(req *REQUEST) (*RESPONSE, error) {
 	var (
-		rzRes  *RazResponse
+		res    *RESPONSE
 		client *http.Client
 		resp   *http.Response
 		err    error
 	)
 
-	if !rzReq.status {
+	if !req.setup {
 		return nil, errors.New("Problem with request")
 	}
 
 	client = &http.Client{}
-	resp, err = client.Do(rzReq.http)
+	resp, err = client.Do(req.http)
 
 	if err != nil {
 		return nil, err
 	}
 
-	rzRes = &RazResponse{
-		http:  resp,
-		rzReq: rzReq,
+	res = &RESPONSE{
+		http:    resp,
+		request: req,
 	}
 
-	return rzRes, nil
+	return res, nil
 }
 
 func Test() (bool, error) {
 	var (
-		r     string
-		req   *REQUEST
-		rzRes *RazResponse
-		err   error
+		r   string
+		req *REQUEST
+		res *RESPONSE
+		err error
 	)
 
 	//r = "$r=1;" + n.Response()
 	req = &REQUEST{}
 
-	rzRes, err = Send(req)
+	res, err = Send(req)
 
 	if err != nil {
 		return false, err
 	}
 
-	r = rzRes.GetResult()
+	r = res.GetResult()
 
 	if r != "1" {
 		return false, nil

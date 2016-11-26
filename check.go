@@ -13,16 +13,16 @@ func Check(req *REQUEST) error {
 }
 
 func _checkSERVER(req *REQUEST) error {
-	if req.Url == "" {
+	if req.c.Url == "" {
 		return errors.New("REQUEST [url] should not be empty")
 	}
 
-	if req.Method != "GET" && req.Method != "POST" && req.Method != "HEADER" && req.Method != "COOKIE" {
-		req.Method = "GET"
+	if req.c.Method != "GET" && req.c.Method != "POST" && req.c.Method != "HEADER" && req.c.Method != "COOKIE" {
+		req.c.Method = "GET"
 	}
 
-	if req.Parameter == "" {
-		req.Parameter = "razboynik"
+	if req.c.Parameter == "" {
+		req.c.Parameter = "razboynik"
 	}
 
 	return nil
