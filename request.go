@@ -44,3 +44,7 @@ func (req REQUEST) IsProtected() bool {
 func (req REQUEST) GetHTTP() *http.Request {
 	return req.http
 }
+
+func (req REQUEST) GetConfig() *Config {
+	return req.c
+}
