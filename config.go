@@ -9,3 +9,13 @@ type Config struct {
 	Raw         bool
 	Shellmethod string
 }
+
+func NewConfig() *Config {
+	c := new(Config)
+	c.Method = "GET"
+	c.Parameter = "razboynik"
+	c.Shellmethod = "system"
+	c.Key = ""
+
+	return c
+}
