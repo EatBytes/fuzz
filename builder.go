@@ -2,10 +2,12 @@ package razboy
 
 import (
 	"bytes"
-	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 
 	"github.com/eatbytes/razboy/normalizer"
 )
@@ -13,10 +15,7 @@ import (
 const KEY = "RAZBOYNIK_KEY"
 
 func _createSimpleRequest(req *REQUEST) error {
-	var (
-		proxy *url.URL
-		err   error
-	)
+	var err error
 
 	switch req.c.Method {
 	case "GET":
@@ -33,23 +32,8 @@ func _createSimpleRequest(req *REQUEST) error {
 		break
 	}
 
-	if req.c.Proxy != "" {
-		proxy, err = url.Parse(req.c.Proxy)
-
-		if err != nil {
-			return err
-		}
-
-		http.DefaultTransport = &http.Transport{
-			Proxy: http.ProxyURL(proxy),
-		}
-	}
-
-	if len(req.Headers) > 0 {
-		for _, header := range req.Headers {
-			req.http.Header.Add(header.Key, header.Value)
-		}
-	}
+	_addProxy(req)
+	_addHeader(req)
 
 	if err != nil {
 		return err
@@ -61,38 +45,81 @@ func _createSimpleRequest(req *REQUEST) error {
 func _createUploadRequest(req *REQUEST) error {
 	var (
 		writer *multipart.Writer
-		data   *bytes.Buffer
+		file   *os.File
+		body   *bytes.Buffer
+		part   io.Writer
 		err    error
 	)
 
 	_buildRzReqBase(req)
 
-	data = req.Buffer
+	file, err = os.Open(req.UploadPath)
 
-	writer = multipart.NewWriter(data)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	body = &bytes.Buffer{}
+	writer = multipart.NewWriter(body)
+	part, err = writer.CreateFormFile("file", filepath.Base(req.UploadPath))
+
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(part, file)
+
+	if err != nil {
+		return err
+	}
+
 	writer.WriteField(req.c.Parameter, req.cmd)
 
 	if req.IsProtected() {
 		writer.WriteField(KEY, req.c.Key)
 	}
 
-	req.Buffer = data
-
-	req.http, err = http.NewRequest("POST", req.c.Url, data)
+	req.http, err = http.NewRequest("POST", req.c.Url, body)
 
 	if err != nil {
 		return err
 	}
-
-	err = writer.Close()
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(writer.FormDataContentType())
 
 	req.http.Header.Add("Content-Type", writer.FormDataContentType())
+
+	_addProxy(req)
+	_addHeader(req)
+
+	return writer.Close()
+}
+
+func _addHeader(req *REQUEST) {
+	if len(req.Headers) > 0 {
+		for _, header := range req.Headers {
+			req.http.Header.Add(header.Key, header.Value)
+		}
+	}
+}
+
+func _addProxy(req *REQUEST) error {
+	var (
+		proxy *url.URL
+		err   error
+	)
+
+	if req.c.Proxy != "" {
+		proxy, err = url.Parse(req.c.Proxy)
+
+		if err != nil {
+			return err
+		}
+
+		http.DefaultTransport = &http.Transport{
+			Proxy: http.ProxyURL(proxy),
+		}
+	}
 
 	return nil
 }

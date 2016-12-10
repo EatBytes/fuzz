@@ -1,12 +1,7 @@
 package phpadapter
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
 
 	"github.com/eatbytes/razboy/normalizer"
 )
@@ -82,51 +77,16 @@ func CreateDownload(dir string) string {
 	return php
 }
 
-func CreateUpload(path, dir string, raw bool) (string, *bytes.Buffer, error) {
-	var (
-		cmd    string
-		err    error
-		file   *os.File
-		body   *bytes.Buffer
-		writer *multipart.Writer
-		part   io.Writer
-	)
+func CreateUpload(dir string) string {
+	return "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
+}
 
-	cmd = "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
+func CreateListFile(scope string) string {
+	return "$r=implode('\n', scandir(" + scope + "));"
+}
 
-	if raw {
-		cmd = normalizer.Encode(cmd)
-	}
-
-	file, err = os.Open(path)
-
-	if err != nil {
-		return "", nil, err
-	}
-
-	defer file.Close()
-
-	body = &bytes.Buffer{}
-	writer = multipart.NewWriter(body)
-	part, err = writer.CreateFormFile("file", filepath.Base(path))
-
-	if err != nil {
-		return "", nil, err
-	}
-
-	_, err = io.Copy(part, file)
-
-	if err != nil {
-		return "", nil, err
-	}
-
-	err = writer.Close()
-
-	if err != nil {
-		return "", nil, err
-	}
-
-	return cmd, body, nil
+func CreateReadFile(file string) string {
+	return "$r=file_get_contents('" + file + "');"
 }
 
 func CreateAnswer(method, parameter string) string {

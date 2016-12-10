@@ -1,6 +1,5 @@
 package razboy
 
-import "bytes"
 import "net/http"
 
 type _shellscope struct {
@@ -14,15 +13,15 @@ type HEADER struct {
 }
 
 type REQUEST struct {
-	Action  string
-	Scope   string
-	Upload  bool
-	Headers []HEADER
-	Buffer  *bytes.Buffer
-	c       *Config
-	cmd     string
-	http    *http.Request
-	setup   bool
+	Action     string
+	Scope      string
+	UploadPath string
+	Upload     bool
+	Headers    []HEADER
+	cmd        string
+	setup      bool
+	c          *Config
+	http       *http.Request
 }
 
 func CreateRequest(action string, scope string, c *Config) *REQUEST {
