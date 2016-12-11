@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"io"
+
 	"github.com/eatbytes/razboy/normalizer"
 )
 
@@ -24,18 +26,22 @@ func (res *RESPONSE) GetRequest() *REQUEST {
 
 func (res *RESPONSE) GetBody() []byte {
 	var (
+		backup io.ReadCloser
 		buffer []byte
 		err    error
 	)
 
 	defer res.http.Body.Close()
 
+	backup = res.http.Body
 	buffer, err = ioutil.ReadAll(res.http.Body)
 
 	if err != nil {
 		fmt.Println(err)
 		return nil
 	}
+
+	res.http.Body = backup
 
 	return buffer
 }

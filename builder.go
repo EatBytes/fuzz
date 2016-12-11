@@ -88,6 +88,7 @@ func _createUploadRequest(req *REQUEST) error {
 	}
 
 	req.http.Header.Add("Content-Type", writer.FormDataContentType())
+	req.http.ContentLength = req.http.ContentLength + 68
 
 	_addProxy(req)
 	_addHeader(req)
