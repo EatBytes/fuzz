@@ -1,12 +1,11 @@
 package razboy
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
-	"io"
 
 	"github.com/eatbytes/razboy/normalizer"
 )
@@ -26,14 +25,12 @@ func (res *RESPONSE) GetRequest() *REQUEST {
 
 func (res *RESPONSE) GetBody() []byte {
 	var (
-		backup io.ReadCloser
 		buffer []byte
 		err    error
 	)
 
 	defer res.http.Body.Close()
 
-	backup = res.http.Body
 	buffer, err = ioutil.ReadAll(res.http.Body)
 
 	if err != nil {
@@ -41,7 +38,7 @@ func (res *RESPONSE) GetBody() []byte {
 		return nil
 	}
 
-	res.http.Body = backup
+	res.http.Body = ioutil.NopCloser(bytes.NewReader(buffer))
 
 	return buffer
 }
