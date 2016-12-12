@@ -93,6 +93,12 @@ func _createUploadRequest(req *REQUEST) error {
 		writer.WriteField(KEY, req.c.Key)
 	}
 
+	err = writer.Close()
+
+	if err != nil {
+		return err
+	}
+
 	req.http, err = http.NewRequest("POST", req.c.Url, body)
 
 	if err != nil {
@@ -101,16 +107,10 @@ func _createUploadRequest(req *REQUEST) error {
 
 	req.body = body.Bytes()
 	req.http.Header.Add("Content-Type", writer.FormDataContentType())
-	req.http.ContentLength = req.http.ContentLength + 68
 
 	_addHeaders(req)
-	err = _addProxy(req)
 
-	if err != nil {
-		return err
-	}
-
-	return writer.Close()
+	return _addProxy(req)
 }
 
 func _addHeaders(req *REQUEST) {
