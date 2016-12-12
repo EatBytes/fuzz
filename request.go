@@ -14,7 +14,6 @@ type HEADER struct {
 
 type REQUEST struct {
 	Action     string
-	Scope      string
 	UploadPath string
 	Upload     bool
 	Headers    []HEADER
@@ -25,10 +24,9 @@ type REQUEST struct {
 	http       *http.Request
 }
 
-func CreateRequest(action string, scope string, c *Config) *REQUEST {
+func CreateRequest(action string, c *Config) *REQUEST {
 	return &REQUEST{
 		Action: action,
-		Scope:  scope,
 		c:      c,
 	}
 }

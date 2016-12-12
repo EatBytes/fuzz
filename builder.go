@@ -12,16 +12,11 @@ import (
 	"github.com/eatbytes/razboy/normalizer"
 )
 
-const KEY = "RAZBOYNIK_KEY"
-
 func _createSimpleRequest(req *REQUEST) error {
 	var err error
 
 	req.setup = true
-
-	if !req.c.Raw {
-		req.cmd = normalizer.Encode(req.Action)
-	}
+	req.cmd = normalizer.Encode(req.Action)
 
 	switch req.c.Method {
 	case "GET":
@@ -60,10 +55,7 @@ func _createUploadRequest(req *REQUEST) error {
 	)
 
 	req.setup = true
-
-	if !req.c.Raw {
-		req.cmd = normalizer.Encode(req.Action)
-	}
+	req.cmd = normalizer.Encode(req.Action)
 
 	file, err = os.Open(req.UploadPath)
 

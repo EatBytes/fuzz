@@ -6,16 +6,17 @@ type Config struct {
 	Parameter   string
 	Key         string
 	Proxy       string
-	Raw         bool
+	Encoding    string
 	Shellmethod string
+	Shellscope  string
 }
 
 func NewConfig() *Config {
 	c := new(Config)
 	c.Method = "GET"
-	c.Parameter = "razboynik"
+	c.Parameter = PARAM
 	c.Shellmethod = "system"
-	c.Key = ""
+	c.Encoding = "base64"
 
 	return c
 }

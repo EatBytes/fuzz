@@ -5,6 +5,9 @@ import (
 	"net/http"
 )
 
+const KEY = "RAZBOYNIK_KEY"
+const PARAM = "razboynik"
+
 func main() {}
 
 func Send(req *REQUEST) (*RESPONSE, error) {

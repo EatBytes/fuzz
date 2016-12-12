@@ -90,10 +90,7 @@ func (res *RESPONSE) GetResult() string {
 	var str string
 
 	str = res.GetResultStr()
-
-	if !res.request.c.Raw {
-		str, _ = normalizer.Decode(str)
-	}
+	str, _ = normalizer.Decode(str)
 
 	return str
 }

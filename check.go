@@ -22,7 +22,7 @@ func _checkSERVER(req *REQUEST) error {
 	}
 
 	if req.c.Parameter == "" {
-		req.c.Parameter = "razboynik"
+		req.c.Parameter = PARAM
 	}
 
 	return nil
