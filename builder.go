@@ -17,6 +17,12 @@ const KEY = "RAZBOYNIK_KEY"
 func _createSimpleRequest(req *REQUEST) error {
 	var err error
 
+	req.setup = true
+
+	if !req.c.Raw {
+		req.cmd = normalizer.Encode(req.Action)
+	}
+
 	switch req.c.Method {
 	case "GET":
 		err = _buildGET(req)
@@ -30,16 +36,18 @@ func _createSimpleRequest(req *REQUEST) error {
 	case "COOKIE":
 		err = _buildCOOKIE(req)
 		break
+	default:
+		req.setup = false
 	}
-
-	_addProxy(req)
-	_addHeader(req)
 
 	if err != nil {
 		return err
 	}
 
-	return nil
+	_addHeaders(req)
+	err = _addProxy(req)
+
+	return err
 }
 
 func _createUploadRequest(req *REQUEST) error {
@@ -51,7 +59,11 @@ func _createUploadRequest(req *REQUEST) error {
 		err    error
 	)
 
-	_buildRzReqBase(req)
+	req.setup = true
+
+	if !req.c.Raw {
+		req.cmd = normalizer.Encode(req.Action)
+	}
 
 	file, err = os.Open(req.UploadPath)
 
@@ -87,16 +99,21 @@ func _createUploadRequest(req *REQUEST) error {
 		return err
 	}
 
+	req.body = body.Bytes()
 	req.http.Header.Add("Content-Type", writer.FormDataContentType())
 	req.http.ContentLength = req.http.ContentLength + 68
 
-	_addProxy(req)
-	_addHeader(req)
+	_addHeaders(req)
+	err = _addProxy(req)
+
+	if err != nil {
+		return err
+	}
 
 	return writer.Close()
 }
 
-func _addHeader(req *REQUEST) {
+func _addHeaders(req *REQUEST) {
 	if len(req.Headers) > 0 {
 		for _, header := range req.Headers {
 			req.http.Header.Add(header.Key, header.Value)
@@ -125,21 +142,11 @@ func _addProxy(req *REQUEST) error {
 	return nil
 }
 
-func _buildRzReqBase(req *REQUEST) {
-	req.setup = true
-
-	if !req.c.Raw {
-		req.cmd = normalizer.Encode(req.Action)
-	}
-}
-
 func _buildGET(req *REQUEST) error {
 	var (
 		url string
 		err error
 	)
-
-	_buildRzReqBase(req)
 
 	url = req.c.Url + "?" + req.c.Parameter + "=" + req.cmd
 
@@ -159,8 +166,6 @@ func _buildPOST(req *REQUEST) error {
 		err  error
 	)
 
-	_buildRzReqBase(req)
-
 	form = url.Values{}
 	form.Set(req.c.Parameter, req.cmd)
 
@@ -169,13 +174,13 @@ func _buildPOST(req *REQUEST) error {
 	}
 
 	data = bytes.NewBufferString(form.Encode())
-
 	req.http, err = http.NewRequest("POST", req.c.Url, data)
 
 	if err != nil {
 		return err
 	}
 
+	req.body = data.Bytes()
 	req.http.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	return nil
@@ -183,8 +188,6 @@ func _buildPOST(req *REQUEST) error {
 
 func _buildHEADER(req *REQUEST) error {
 	var err error
-
-	_buildRzReqBase(req)
 
 	req.http, err = http.NewRequest("GET", req.c.Url, nil)
 
@@ -206,8 +209,6 @@ func _buildCOOKIE(req *REQUEST) error {
 		cookie, kcookie *http.Cookie
 		err             error
 	)
-
-	_buildRzReqBase(req)
 
 	req.http, err = http.NewRequest("GET", req.c.Url, nil)
 

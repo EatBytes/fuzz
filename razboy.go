@@ -78,29 +78,3 @@ func SendRequest(req *REQUEST) (*RESPONSE, error) {
 
 	return res, nil
 }
-
-func Test() (bool, error) {
-	var (
-		r   string
-		req *REQUEST
-		res *RESPONSE
-		err error
-	)
-
-	//r = "$r=1;" + n.Response()
-	req = &REQUEST{}
-
-	res, err = Send(req)
-
-	if err != nil {
-		return false, err
-	}
-
-	r = res.GetResult()
-
-	if r != "1" {
-		return false, nil
-	}
-
-	return true, nil
-}
